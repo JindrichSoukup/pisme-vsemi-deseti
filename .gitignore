@@ -1,0 +1,10 @@
+# Profily uživatelů. Obsahují jméno dítěte a celou historii psaní,
+# takže nepatří nikam ven. Vznikají znovu při prvním spuštění.
+data/
+
+# Podklady, které nejsou moje: naskenovaná učebnice a obrázek z cizí aplikace.
+*.pdf
+jungle-junior-jungle-junior-lesson.png
+
+# Dočasné soubory z atomického zápisu.
+*.tmp

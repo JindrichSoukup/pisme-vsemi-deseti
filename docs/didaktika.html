@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Didaktika psaní všemi deseti</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      max-width: 720px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+      line-height: 1.6;
+      color: #1a1a1a;
+    }
+    h1 { margin-bottom: 0.25rem; font-size: 1.6rem; }
+    p.subtitle { color: #555; margin-top: 0; }
+    h2 {
+      font-size: 1.05rem;
+      margin: 2rem 0 0.5rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid #e5e5e5;
+    }
+    h3 { font-size: 0.98rem; margin: 1.5rem 0 0.4rem; color: #333; }
+    p { color: #333; }
+    ul { padding-left: 1.2rem; }
+    li { margin: 0.35rem 0; color: #333; }
+    a { color: #33492F; }
+    .back { font-size: 0.9rem; margin-bottom: 2rem; }
+    pre {
+      background: #f4f4f2;
+      padding: 0.8rem 1rem;
+      border-radius: 3px;
+      overflow-x: auto;
+      font-size: 0.9em;
+      line-height: 1.5;
+    }
+    code {
+      background: #f4f4f2;
+      padding: 0.1em 0.3em;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <p class="back"><a href="index.html">← Jindřich Soukup</a></p>
+
+  <h1>Didaktika psaní všemi deseti</h1>
+  <p class="subtitle">Co jsem o výuce psaní našel, co z toho program používá a co ne. Slouží jako zdůvodnění rozhodnutí v osnově lekcí, aby je někdo později neměnil naslepo.</p>
+
+  <h2>Odkud podklady pocházejí</h2>
+  <p>Použitelné byly čtyři druhy zdrojů. České metodické weby ZAV, Umíme informatiku a psani-deseti.cz. Otevřené soubory lekcí GNU Typist a jeho předchůdce z MIT, což je doslovný přepis klasické učebnice psaní a dá se číst řádek po řádku. Kurzy how-to-type a Ratatype. A vlastní výpočty nad slovníkem tohoto programu.</p>
+  <p>Nepodařilo se sehnat obsah lekcí z učebnic Century 21 a 20th Century Typewriting, vyhledávání vrací jen katalogové záznamy. Stejně tak strukturu lekcí programů Klavaro a TIPP10. Kniha Mastering Computer Typing se ukázala jako sken, jehož textová vrstva je rozsypaná a čte se pozpátku.</p>
+  <h2>Pořadí kláves</h2>
+  <p>České zdroje se shodují na postupu od ukazováčků ven: nejdřív F a J, pak D a K, S a L, A a Ů, potom G a H. Následuje horní řada, dolní řada, velká písmena a nakonec diakritika na číselné řadě.</p>
+  <p>Metoda ZAV to má jinak. Učí písmena podle četnosti v češtině a začíná od A, protože pak jdou brzy skládat slabiky a krátká slova. Po dvou stech cvičeních má student probráno zhruba pětaosmdesát procent běžného textu.</p>
+  <p>Klasická anglická učebnice jde ještě jinudy. V lekci T1 probere celou základní řadu naráz a hned na konci té samé lekce píše opravdová slova a větu:</p>
+  <pre>fff jjj ddd kkk sss lll aaa ;;;
+asdf jkl; asdf jkl; asdf jkl;
+sad add all; alas flask fad
+dad asks a lad; a lass falls</pre>
+  <p>Program jde cestou malých kroků: základní řadu rozkládá do čtyř lekcí. Platí se za to tím, že první opravdová slova přijdou až ve čtvrté lekci a první věta až v osmnácté. Pro devítileté dítě, které začíná od nuly, mi menší krůčky přišly důležitější než rychlá odměna v podobě skutečného slova.</p>
+  <h2>Stavba cvičení</h2>
+  <h3>Slábnoucí skupinky</h3>
+  <p>Učebnice nepíše jedno písmeno pořád dokola, ale zkracuje skupinky:</p>
+  <pre>fff fff fff  ff ff ff  f f f</pre>
+  <p>Má to důvod. Čím kratší skupinka, tím častěji přijde mezerník a tím častěji se prst musí vrátit do základní polohy. Řádek složený jen z „fff“ cvičí jeden pohyb dokola, ale návrat domů skoro vůbec.</p>
+  <h3>Mezerník od první lekce</h3>
+  <p>Otázka, kdy zapojit mezerník, má v podkladech jasnou odpověď: hned. Klasická učebnice odděluje skupinky mezerou už na prvním řádku první lekce a české zdroje to mají stejně. Mezerník není další klávesa, kterou by se dalo odložit, protože bez něj nejde napsat nic víc než jeden shluk písmen.</p>
+  <p>Má to i druhý důvod. Mezerník mačká palec, tedy jediný prst, který nemá v základní řadě domovskou klávesu a nikam se nenatahuje. Nekonkuruje tak nácviku ostatních prstů a dá se zvládnout současně s nimi. Program proto od první lekce požaduje palec a nikde nezavádí mezerník jako novou látku.</p>
+  <h3>Tři stupně nácviku</h3>
+  <p>Výzkum motorického učení popisuje efekt kontextové interference. Blokovaný nácvik, tedy stejná věc za sebou, vede k lepším výsledkům během samotného cvičení, ale k horšímu zapamatování. Zamíchané pořadí se během cvičení zvládá hůř, zato mnohem líp drží při pozdějším vybavení a přenosu. Pro začátečníka v rané fázi platí, že blokovaný nácvik funguje líp, takže správné pořadí je obojí, ne jedno místo druhého.</p>
+  <p>Program proto jde takto:</p>
+  <ul>
+    <li>jedno písmeno pořád dokola, aby si prst zapamatoval cestu</li>
+    <li>pravidelné střídání obou rukou, aby naskočil rytmus</li>
+    <li>zamíchané skupinky, do kterých se přimíchají i písmena z dřívějších lekcí</li>
+  </ul>
+  <h3>Rozcvička na začátek</h3>
+  <p>Lekce v učebnici nezačíná novou látkou, ale připomenutím toho, co už student umí. Nejdřív celá základní řada, potom sevření dřív naučených kláves.</p>
+  <h3>Sevření mezi domovské klávesy</h3>
+  <p>Nejčastější chyba začátečníka není špatná klávesa, ale posun celé ruky za nataženým prstem. Ruka se pak nevrátí a další písmeno je o jedno vedle. Učebnice na to má u každé klávesy mimo základní řadu tenhle chvat:</p>
+  <pre>fgf jhj ded k,k</pre>
+  <p>Prst se natáhne a hned se vrátí domů, ještě než se ruka stihne posunout. Program si tyto trojice odvozuje sám z přiřazení prstů, takže vznikne i <code>frf juj</code> pro R a U nebo <code>sěs dšd</code> pro Ě a Š na číselné řadě.</p>
+  <h3>Shift</h3>
+  <p>Kurzy se shodují na pravidle opačné ruky: písmeno jednou rukou, Shift malíčkem té druhé. Učebnice k tomu přidává sevření mezi domovskou klávesu toho malíčku, který Shift drží, a později totéž s celými slovy:</p>
+  <pre>;;; ;A; ;;; ;F; ;;; ;D;
+aaa Pi aaa Lord aaa Jill aaa</pre>
+  <p>Nejtěžší je střídání obou Shiftů, tedy dvě velká písmena za sebou z opačných stran klávesnice. Kurz how-to-type na to má zvláštní krok nazvaný All Together.</p>
+  <h2>Jak se měří výkon</h2>
+  <p>V češtině se rychlost psaní udává v úhozech za minutu, ne ve slovech za minutu jako v angličtině. Jeden úhoz je jedno stisknutí klávesy včetně mezerníku. Program se drží české jednotky, protože v ní jsou zadané všechny tuzemské požadavky a dítě v ní později uvidí i případné školní výsledky.</p>
+  <p>Ukazuje se čistá rychlost, tedy snížená o chybovost. Hrubá rychlost bez ohledu na chyby je u začátečníka zavádějící: dá se zvýšit tím, že se píše rychle a špatně, což je přesně to, čemu se celý nácvik snaží zabránit.</p>
+  <h3>Cílová rychlost lekce</h3>
+  <p>Každá lekce má svou cílovou rychlost, od čtyřiceti úhozů za minutu v první lekci po sto dvacet v nejtěžších. Tahle řada není převzatá z žádné tabulky, nastavil jsem ji jako mírný náběh. Je to tak schválně, protože cílová rychlost nikde nic neblokuje. Rozhoduje jen o třetí hvězdičce a odemčení další lekce závisí čistě na přesnosti. Když je tedy číslo u některé lekce nastavené přísněji, než odpovídá devítiletému dítěti, nestane se nic horšího, než že se tam hůř dosáhne na třetí hvězdičku.</p>
+  <p>Pro srovnání: běžný dospělý, který píše všemi deseti, se pohybuje kolem dvou set úhozů za minutu. Cíle v programu jsou tedy záměrně hluboko pod tím.</p>
+  <h2>Chyba během nácviku</h2>
+  <p>Zdroje se shodují, že se překlepy během nácviku neopravují, protože zastavování a mazání přerušuje pohyb, který se má prst naučit. Program to dodržuje tím, že je Backspace zpočátku vypnutý a přijde až jako samostatná lekce.</p>
+  <p>Jenže nechat dítě dopsat řádek, na kterém už udělalo šest chyb, taky nedává smysl. Prsty si při tom upevňují právě ten špatný pohyb. Program proto řádek hlídá: když se na něm nasbírají víc než dvě chyby, řádek se smaže a píše se znovu od začátku. Po třech pokusech se pokračuje dál, aby se dítě nezaseklo na jednom řádku a neztratilo chuť. Hranice dvou chyb jde v nastavení změnit nebo úplně vypnout.</p>
+  <p>Rozdíl proti mazání je v tom, že se neopravuje jednotlivý znak uprostřed psaní, ale opakuje se celý pohyb od začátku. To odpovídá tomu, jak se nacvičuje každá jiná motorická dovednost.</p>
+  <h2>Slabé klávesy se vracejí</h2>
+  <p>Adaptivní programy typu keybr sledují u každé klávesy zvlášť chybovost i reakční dobu a slabé klávesy cíleně vracejí do textu. Program to přebírá v mírnější podobě: u každého znaku si vede chybovost a klouzavý průměr latence a z nich počítá váhu pro losování slov. Slovo obsahující klávesu, která dítěti dělá potíže, se objeví častěji.</p>
+  <p>Mírnější je to ve dvou ohledech. Váha se pohybuje v malém rozmezí, takže se cvičení nepromění v jednu a tutéž obtížnou klávesu dokola. A klávesa, která zatím má míň než deset úhozů, dostane zvýšenou váhu taky, protože o ní program ještě nic neví a málo procvičená klávesa si pozornost zaslouží stejně jako chybová.</p>
+  <h2>Zásady, na kterých se zdroje shodují</h2>
+  <ul>
+    <li>Přesnost je důležitější než rychlost. Rychlé psaní se špatným hmatem chyby jen upevňuje.</li>
+    <li>Krátké denní dávky fungují líp než dlouhé cvičení jednou za čas. Deset až patnáct minut denně stačí.</li>
+    <li>Nedívat se na ruce. Kdo se dívá, ten se psát všemi deseti nenaučí.</li>
+    <li>Chyby se během nácviku neopravují. Kdo opravuje každý překlep, pořád se zastavuje a prsty se nestihnou naučit pohyb. Backspace má přijít později jako samostatná látka.</li>
+    <li>Mezerník se mačká palcem. Anglická učebnice trvá na pravém palci, české zdroje to nechávají otevřené.</li>
+    <li>Po každém úhozu mimo základní řadu se prst vrací na svou domovskou klávesu.</li>
+    <li>Posez patří k látce, ne k dobrým radám. Rovná záda, obě chodidla na zemi, lokty volně u těla, zápěstí neležící na stole. Program to připomíná ve výkladu první lekce a pak už jen občas, aby to nezevšednělo.</li>
+  </ul>
+  <h3>Délka jedné lekce</h3>
+  <p>Z krátkých denních dávek plyne rozhodnutí, které není na první pohled vidět: lekce je dlouhá zhruba tak, aby zabrala celé denní cvičení. Vypadalo by rozumněji udělat lekce kratší a přívětivější, ale pak by po dokončené lekci do denního cíle pár minut chybělo a muselo by se pokaždé řešit, jestli začínat další. Takhle je den uzavřený jednou lekcí.</p>
+  <p>Komu nezbývají síly, skončí mezi cvičeními a zbytek dodělá zítra, protože program si pamatuje, u kterého cvičení se přestalo. Tím je ošetřená ta část, kvůli které by se jinak lekce zkracovaly.</p>
+  <h3>Nedívat se na ruce</h3>
+  <p>Obrázek klávesnice na obrazovce je v tomhle sporný. Pomáhá, dokud dítě neví, kde klávesa leží, a škodí, jakmile se na něj začne dívat místo toho, aby si polohu pamatovalo. Program ho proto umí vypnout a počítá s tím, že se vypne, jakmile se hmat usadí. Nákres rukou se zvýrazněným prstem zůstává, protože ten ukazuje, který prst jde na řadu, ne kde klávesa je.</p>
+  <h2>Specifika české klávesnice</h2>
+  <p>Rozložení QWERTZ, diakritika na číselné řadě, velká písmena s háčky skládaná mrtvou klávesou a k tomu vlastní výpočet, které dvojice písmen jsou v češtině pro jeden prst nejtěžší: to všechno má samostatný dokument <a href="cestina.html">Čeština a česká klávesnice</a>. Osnova lekcí z něj vychází na několika místech, hlavně v lekci o skládání velkých písmen a v prstolamech.</p>
+  <h2>Pravá a levá u devítiletého dítěte</h2>
+  <p>Záměna stran je v tomhle věku běžná. Doporučení, která se v podkladech opakují, jsou barevné odlišení, slovní pojmenování s opakováním a ukazování na vlastním těle vedle dítěte, ne proti němu.</p>
+  <p>Program to řeší tak, že barva znamená prst, ne ruku. Stejný prst má na obou rukou stejnou barvu, takže barvy stačí čtyři a jdou od sebe rozeznat. Levou od pravé dítě pozná podle nákresu rukou s velkým L a P na dlani a podle nápisu v nápovědě. Osm tlumených pastelových odstínů, se kterými program začínal, se při zkoušení slévalo dohromady.</p>
+  <h2>Zdroje</h2>
+  <ul>
+    <li><a href="https://www.zav.cz/vyuka-psani-na-klavesnici/">Internetová škola ZAV</a></li>
+    <li><a href="https://www.umimeinformatiku.cz/cviceni-psani-vsemi-deseti">Psaní všemi deseti, Umíme informatiku</a></li>
+    <li><a href="https://www.psani-deseti.cz/teorie">Teorie psaní všemi deseti</a></li>
+    <li><a href="https://web.mit.edu/games/lib/typist/t.typ">Typist, soubor lekcí, MIT</a></li>
+    <li><a href="https://www.gnu.org/software/gtypist/doc/gtypist.html">GNU Typist</a></li>
+    <li><a href="https://www.how-to-type.com/touch-typing-lessons/how-to-type-capitals/">How To Type, lekce o velkých písmenech</a></li>
+    <li><a href="https://www.ratatype.com/faq/The-ultimate-Guide-for-Teachers-to-teach-touch-typing-to-children/">Ratatype, průvodce pro učitele</a></li>
+    <li><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4069194/">Přehled k blokovanému a náhodnému nácviku</a></li>
+  </ul>
+</body>
+</html>

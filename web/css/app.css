@@ -1,0 +1,510 @@
+/* Klidné prostředí. Během psaní nesmí nic blikat, poskakovat ani odvádět pozornost. */
+
+:root {
+  --bg: #faf7f2;
+  --card: #ffffff;
+  --ink: #2f2a26;
+  --muted: #8b8378;
+  --line: #e6e0d6;
+  --accent: #4a7c59;
+  --accent-soft: #e8f0e9;
+  --bad: #c05442;
+  --bad-soft: #fbe6e1;
+  --star: #e0a92b;
+  --radius: 14px;
+  --shadow: 0 1px 2px rgba(47, 42, 38, .06), 0 6px 20px rgba(47, 42, 38, .05);
+
+  /* čtyři barvy prstů, stejné pro obě ruce */
+  --f-pinky: #2f6fdd;
+  --f-ring: #3aa657;
+  --f-middle: #e8ab12;
+  --f-index: #e2483c;
+  --f-thumb: #9a9a9a;
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #22201d;
+    --card: #2c2926;
+    --ink: #ece7e0;
+    --muted: #a49c92;
+    --line: #3c3833;
+    --accent: #7fb98e;
+    --accent-soft: #2e3a31;
+    --bad: #e0806c;
+    --bad-soft: #4a302a;
+    --star: #e8c05a;
+    color-scheme: dark;
+  }
+}
+
+* { box-sizing: border-box; }
+
+/* Prvky s vlastním display si jinak atribut hidden nevšímají, protože
+   pravidlo autora přebije výchozí pravidlo prohlížeče. */
+[hidden] { display: none !important; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+h1, h2, h3 { line-height: 1.25; margin: 0 0 .4em; font-weight: 650; }
+h1 { font-size: 1.7rem; }
+h2 { font-size: 1.25rem; }
+h3 { font-size: 1.02rem; }
+p { margin: 0 0 .8em; }
+a { color: var(--accent); }
+
+button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: .5rem .9rem;
+  transition: background .12s, border-color .12s;
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button[disabled] { opacity: .45; cursor: not-allowed; }
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  padding: .7rem 1.4rem;
+  font-size: 1.05rem;
+}
+.btn-primary:hover { filter: brightness(1.06); border-color: var(--accent); }
+.btn-big { font-size: 1.15rem; padding: .9rem 1.8rem; border-radius: 12px; }
+.btn-quiet { background: none; border-color: transparent; color: var(--muted); }
+.btn-quiet:hover { color: var(--ink); background: var(--card); }
+
+input[type="text"] {
+  font: inherit;
+  padding: .55rem .8rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------------ layout */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .6rem 1.2rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  flex-wrap: wrap;
+}
+.topbar__brand { font-weight: 700; letter-spacing: -.01em; }
+.topbar nav { display: flex; gap: .25rem; margin-left: auto; }
+.topbar nav button { border-color: transparent; background: none; padding: .4rem .8rem; }
+.topbar nav button[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+
+main { max-width: 940px; margin: 0 auto; padding: 1rem 1.2rem 2rem; }
+/* při psaní je potřeba co nejvíc šířky a co nejmíň výšky */
+main.screen-lesson { max-width: 1180px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  box-shadow: var(--shadow);
+}
+.stack > * + * { margin-top: .8rem; }
+.row { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; }
+.spread { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.muted { color: var(--muted); }
+.small { font-size: .88rem; }
+.center { text-align: center; }
+
+/* ---------------------------------------------------------------- profily */
+
+.profiles { display: grid; gap: .8rem; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.profile-card { text-align: left; padding: 1rem 1.1rem; border-radius: var(--radius); }
+.profile-card b { display: block; font-size: 1.15rem; }
+
+/* ------------------------------------------------------- dnešní cvičení */
+
+.goal--done { border-color: var(--accent); background: var(--accent-soft); }
+.goal__bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--line);
+  overflow: hidden;
+  margin-top: .9rem;
+}
+.goal__bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width .3s ease;
+}
+
+/* ------------------------------------------------------------- mapa lekcí */
+
+/* zbytek cesty je schválně schovaný, ať před dítětem nestojí dlouhý seznam */
+.road { margin-top: 1.4rem; }
+.road > summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: .9rem;
+  padding: .4rem 0;
+  list-style: none;
+}
+.road > summary::-webkit-details-marker { display: none; }
+.road > summary::before { content: "▸ "; }
+.road[open] > summary::before { content: "▾ "; }
+.road > summary:hover { color: var(--ink); }
+
+.block { margin-top: 1.6rem; }
+.block h3 { color: var(--muted); font-size: .82rem; text-transform: uppercase; letter-spacing: .06em; }
+.lessons { display: grid; gap: .6rem; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); }
+
+.lesson-card {
+  text-align: left;
+  padding: .7rem .9rem;
+  display: grid;
+  gap: .15rem;
+  border-radius: 12px;
+}
+.lesson-card b { font-size: .96rem; font-weight: 600; }
+.lesson-card__block {
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted);
+}
+.lesson-card--locked { opacity: .5; }
+.lesson-card--done { border-color: var(--accent); background: var(--accent-soft); }
+.lesson-card__keys {
+  font-family: ui-monospace, Consolas, monospace;
+  color: var(--muted);
+  font-size: .85rem;
+  letter-spacing: .12em;
+}
+.stars { color: var(--star); letter-spacing: .12em; font-size: .9rem; }
+.stars--empty { color: var(--line); }
+
+/* --------------------------------------------------------------- klávesnice */
+
+.kb { display: grid; gap: 4px; user-select: none; }
+.kb__row { display: flex; gap: 4px; justify-content: center; }
+.key {
+  --w: 1;
+  flex: 0 0 calc(var(--w) * 37px);
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  display: grid;
+  place-items: center;
+  position: relative;
+  font-size: .95rem;
+  transition: background .1s, border-color .1s, transform .1s;
+}
+.key__shift { position: absolute; top: 3px; left: 6px; font-size: .62rem; color: var(--muted); font-weight: 500; }
+.key__main { line-height: 1; }
+.key--deco { font-size: .68rem; color: var(--muted); }
+.key--space .key__main { font-size: .68rem; color: var(--muted); }
+.key--home { box-shadow: inset 0 -3px 0 var(--line); }
+.key--dim { opacity: .3; }
+
+/* Čtyři barvy podle prstu, zrcadlově pro obě ruce. Sytě, ať jdou od sebe
+   rozeznat. Klávesy, které se ještě neučily, zůstávají prázdné. */
+.kb .f-lp, .kb .f-rp { background: var(--f-pinky); color: #fff; border-color: transparent; }
+.kb .f-lr, .kb .f-rr { background: var(--f-ring); color: #fff; border-color: transparent; }
+.kb .f-lm, .kb .f-rm { background: var(--f-middle); color: #3a2c00; border-color: transparent; }
+.kb .f-li, .kb .f-ri { background: var(--f-index); color: #fff; border-color: transparent; }
+.kb .f-th { background: var(--f-thumb); color: #fff; border-color: transparent; }
+.kb .key__shift { color: inherit; opacity: .8; }
+
+.kb .key--deco,
+.kb .key--dim {
+  background: var(--card);
+  color: var(--muted);
+  border-color: var(--line);
+  opacity: 1;
+}
+.kb .key--dim { color: color-mix(in srgb, var(--muted) 45%, transparent); }
+.kb .key--home { box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .28); }
+
+.key--next {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+  z-index: 1;
+}
+.key--next-shift { outline: 3px dashed var(--ink); outline-offset: 2px; z-index: 1; }
+
+/* ------------------------------------------------------------------- ruce */
+
+.hands { width: 100%; max-width: 300px; height: auto; }
+.hand-palm { fill: var(--card); stroke: var(--muted); stroke-width: 1.8; }
+.hand-finger {
+  fill: var(--card);
+  stroke: var(--muted);
+  stroke-width: 1.8;
+  transition: fill .1s;
+}
+/* prst, který je na řadě, se celý obarví svou barvou */
+.hand-finger--on { fill: var(--c); stroke: var(--ink); stroke-width: 2.5; }
+.hand-dot { stroke: none; }
+.hand-badge { fill: var(--line); }
+.hand-letter { font: 700 15px system-ui, sans-serif; fill: var(--muted); }
+.hand-label { font: 600 11px system-ui, sans-serif; fill: var(--muted); }
+
+.kb-row { display: flex; gap: 1.2rem; align-items: center; flex-wrap: wrap; }
+.kb-row > :first-child { flex: 1 1 460px; }
+.kb-row > :last-child { flex: 0 1 300px; }
+
+/* jméno ruky v nápovědě má stejnou barvu jako ruka na obrázku */
+.hand-name { font-weight: 700; padding: 0 .25rem; border-radius: 5px; }
+
+.finger-legend { display: flex; flex-wrap: wrap; gap: .4rem .9rem; font-size: .82rem; color: var(--muted); }
+.finger-legend i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; vertical-align: -1px; margin-right: .3rem; }
+
+.hint {
+  font-size: .92rem;
+  color: var(--muted);
+  min-height: 1.4em;
+  margin: .55rem 0 0;
+}
+.hint b { color: var(--ink); font-weight: 600; }
+
+/* -------------------------------------------------------------- psaní textu */
+
+.engine { position: relative; }
+/* Skrytý vstup musí zůstat v ploše stránky, jinak by prohlížeč při zaostření
+   odskočil jinam. Proto je průhledný na místě, ne odsunutý daleko pryč. */
+.engine__input {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  border: 0;
+  padding: 0;
+  background: none;
+  pointer-events: none;
+}
+.engine__box { position: relative; }
+.engine__lines {
+  font-family: ui-monospace, "Cascadia Mono", Consolas, "DejaVu Sans Mono", monospace;
+  font-size: 1.35rem;
+  line-height: 1.6;
+  letter-spacing: .02em;
+  padding: .85rem 1rem;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow-x: auto;
+}
+
+/* Vidět je vždycky jen ten řádek, který se právě píše. */
+.line { display: none; white-space: pre; color: var(--ink); }
+.line--active { display: block; }
+
+.engine__meta {
+  font-size: .8rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* vzkaz, když se řádek píše znovu kvůli chybám */
+.engine__redo {
+  margin-top: .5rem;
+  padding: .5rem .8rem;
+  border-radius: 10px;
+  background: var(--bad-soft);
+  color: var(--bad);
+  font-size: .92rem;
+  font-weight: 500;
+}
+
+.ch { position: relative; }
+.ch--space { white-space: pre; }
+.ch--ok { color: var(--accent); }
+.ch--bad { color: var(--bad); background: var(--bad-soft); border-radius: 3px; }
+.ch--space.ch--bad { background: var(--bad); }
+.ch--cursor::after {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: -.08em;
+  bottom: -.08em;
+  width: 2px;
+  background: var(--accent);
+  animation: blink 1.1s steps(2, start) infinite;
+}
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .ch--cursor::after { animation: none; } }
+
+/* pruh postupu a číslo řádku sdílí jeden řádek, ať se ušetří výška */
+.engine__foot { display: flex; align-items: center; gap: .8rem; margin-top: .55rem; }
+.engine__bar { flex: 1; height: 5px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.engine__bar i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .12s linear; }
+
+.engine__blur {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--card) 82%, transparent);
+  border-radius: var(--radius);
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+/* --------------------------------------------------------------- výsledek */
+
+.result-stars { font-size: 3rem; color: var(--star); letter-spacing: .1em; }
+.result-stars .off { color: var(--line); }
+.metrics { display: flex; gap: 2.2rem; flex-wrap: wrap; }
+.metric b { display: block; font-size: 1.9rem; font-weight: 650; line-height: 1.1; }
+.metric span { color: var(--muted); font-size: .85rem; }
+
+.reward {
+  text-align: center;
+  padding: 1.6rem;
+  border: 2px dashed var(--star);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--star) 8%, var(--card));
+}
+.reward svg { display: block; margin: .4rem auto .8rem; }
+
+/* --------------------------------------------------------------- notýsek */
+
+.notebook { --paper: #fdfaf1; --rule: #d9e3ef; --margin-line: #e0a6a0; --pencil: #3d4657; }
+@media (prefers-color-scheme: dark) {
+  .notebook { --paper: #33302b; --rule: #43413c; --margin-line: #7a5450; --pencil: #ded7cc; }
+}
+
+.notebook__page {
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 33px, var(--rule) 33px 34px),
+    var(--paper);
+  background-position: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px 10px 10px 4px;
+  box-shadow: var(--shadow);
+  padding: 1.6rem 1.6rem 2rem 3.4rem;
+  position: relative;
+  min-height: 320px;
+  color: var(--pencil);
+}
+/* svislá červená linka jako v opravdovém sešitě */
+.notebook__page::before {
+  content: "";
+  position: absolute;
+  left: 2.4rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--margin-line);
+  opacity: .55;
+}
+
+.notebook__title,
+.notebook__note,
+.taped figcaption {
+  font-family: "Segoe Script", "Bradley Hand", "Comic Sans MS", cursive;
+}
+.notebook__title { margin: 0 0 1.2rem; font-size: 1.35rem; }
+.notebook__note { margin: 1.4rem 0 0; opacity: .75; }
+
+.notebook__grid {
+  display: grid;
+  gap: 1.6rem 1.2rem;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.taped {
+  --rot: 0deg;
+  margin: 0;
+  padding: .55rem .55rem .45rem;
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: 0 2px 7px rgba(47, 42, 38, .18);
+  transform: rotate(var(--rot));
+  position: relative;
+  text-align: center;
+}
+.taped svg { display: block; margin: 0 auto .25rem; }
+.taped figcaption { font-size: .95rem; color: #3d4657; line-height: 1.3; }
+.taped figcaption small { display: block; font-size: .72rem; opacity: .7; }
+
+/* lepicí páska přes horní okraj */
+.taped__tape {
+  position: absolute;
+  top: -11px;
+  left: 50%;
+  width: 60px;
+  height: 21px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: rgba(238, 220, 140, .6);
+  border-left: 1px dashed rgba(47, 42, 38, .12);
+  border-right: 1px dashed rgba(47, 42, 38, .12);
+}
+
+/* ------------------------------------------------------------------ grafy */
+
+.chart { width: 100%; height: auto; display: block; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart text { fill: var(--muted); font-size: 11px; }
+
+.chart .bar { fill: var(--accent); }
+/* opakování jedné části lekce se kreslí světleji, není to celý pokus */
+.chart .bar--partial { fill: color-mix(in srgb, var(--accent) 40%, var(--card)); }
+.chart .bar-value { fill: var(--muted); font-size: 10px; }
+
+/* prahy hvězdiček */
+.chart .guide { stroke: var(--star); stroke-width: 1; stroke-dasharray: 4 4; opacity: .8; }
+.chart .guide-label { fill: var(--star); font-size: 10px; }
+
+/* trend se proloží až po pár dnech, jinak by předstíral vývoj */
+.chart .trend { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 5 4; opacity: .6; }
+
+table.keys { border-collapse: collapse; width: 100%; font-size: .92rem; }
+table.keys th, table.keys td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid var(--line); }
+table.keys td.k { font-family: ui-monospace, Consolas, monospace; font-size: 1.05rem; }
+
+.notice {
+  border-left: 4px solid var(--star);
+  background: color-mix(in srgb, var(--star) 10%, var(--card));
+  padding: .8rem 1rem;
+  border-radius: 0 10px 10px 0;
+}
+
+.steps-dots { display: flex; gap: .35rem; }
+.steps-dots i {
+  width: 26px; height: 5px; border-radius: 3px; background: var(--line); display: block;
+}
+.steps-dots i.on { background: var(--accent); }
+.steps-dots i.now { background: var(--ink); }
+
+@media (max-width: 960px) {
+  .engine__lines { font-size: 1.2rem; }
+}
+@media (max-width: 720px) {
+  .engine__lines { font-size: 1rem; }
+  .key { flex-basis: calc(var(--w) * 30px); height: 34px; font-size: .82rem; }
+}

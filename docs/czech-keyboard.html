@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Czech and the Czech keyboard</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      max-width: 720px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+      line-height: 1.6;
+      color: #1a1a1a;
+    }
+    h1 { margin-bottom: 0.25rem; font-size: 1.6rem; }
+    p.subtitle { color: #555; margin-top: 0; }
+    h2 {
+      font-size: 1.05rem;
+      margin: 2rem 0 0.5rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid #e5e5e5;
+    }
+    h3 { font-size: 0.98rem; margin: 1.5rem 0 0.4rem; color: #333; }
+    p { color: #333; }
+    ul { padding-left: 1.2rem; }
+    li { margin: 0.35rem 0; color: #333; }
+    a { color: #33492F; }
+    .back { font-size: 0.9rem; margin-bottom: 2rem; }
+    pre {
+      background: #f4f4f2;
+      padding: 0.8rem 1rem;
+      border-radius: 3px;
+      overflow-x: auto;
+      font-size: 0.9em;
+      line-height: 1.5;
+    }
+    code {
+      background: #f4f4f2;
+      padding: 0.1em 0.3em;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <p class="back"><a href="index.html">← Jindřich Soukup</a></p>
+
+  <h1>Czech and the Czech keyboard</h1>
+  <p class="subtitle">What is different about teaching typing in Czech rather than in English. A smaller part is about the layout; the larger part is my own computation over this program's word list. It continues <a href="didactics.html">the note on didactics</a>, which holds the rest of the curriculum.</p>
+
+  <h2>The QWERTZ layout</h2>
+  <p>Z sits in the top row and Y at the bottom left, exactly the other way round from an English keyboard. Letters with diacritics have keys of their own on the number row, ěščřžýáíé from left to right, which means the digits are typed with Shift. Ů sits next to L, and ú next to P.</p>
+  <p>For teaching, one nuisance follows from that. The digits, which in English are a lesson of their own at the end, carry Shift as well in Czech. The program therefore leaves them for the very end, after capitals.</p>
+  <h2>Capitals with diacritics</h2>
+  <p>This is the strangest thing about the Czech keyboard, and I only found it while writing a test. Capital Č, Ř or Š cannot be typed with Shift at all. Shift over ř gives 5, because the digits sit above the diacritics.</p>
+  <p>They have to be composed with a dead key: first the acute or the caron, at which point nothing appears on screen, and only the next stroke completes the letter. The same goes for ď, ť, ň and ó, which have no key of their own at all.</p>
+  <p>That decides how the program reads input. If it listened to key presses, a dead key would arrive as an empty press and the finished letter would never come. It therefore reads the composed character, meaning whatever actually appears in the text. Composition also gets a lesson of its own, because without an explanation the first stroke looks like a broken keyboard.</p>
+  <p>Capital Ě and Ů are left out. In Czech they never begin a word, and elsewhere they do not need a capital.</p>
+  <h2>The hardest pairs for a single finger in Czech</h2>
+  <p>The hardest pairs are those where one finger has to hit two different keys one immediately after the other. The work cannot be split between two fingers or between the hands; the finger has to lift, move and strike again in time.</p>
+  <ul>
+    <li>lo and ol, right ring finger, 36 occurrences</li>
+    <li>ce and ec, left middle finger, 27 occurrences</li>
+    <li>tr and rt, left index finger, 25 occurrences</li>
+    <li>ed and de, left middle finger, 25 occurrences</li>
+  </ul>
+  <p>The hardest Czech word in the list is čtvrtek, Thursday, which packs four such pairs into seven letters. With two each come bratr, dcera, kolo, kouzlo, leden, meloun, muž, poledne, pstruh, rozum and slunce.</p>
+  <p>The program turned this into a lesson of finger twisters of its own. They work like tongue twisters: the point is not to type them fast, but to find out whether the fingers are working independently.</p>
+  <h2>One-handed words</h2>
+  <p>The second group of hard words are those typed entirely with one hand. The other hand has nothing to do, and one hand has to manage the whole sequence alone.</p>
+  <p>In Czech there are markedly more of these for the left hand. In the program's word list thirty-five came out for the left and fourteen for the right, two and a half times as many. The left hand can type sestra, srdce, stavba, cesta, večer or větev; the right hand kolo, okno, pokoj, kouzlo or kluk. The alphabet sits further left on a Czech keyboard.</p>
+  <p>The one-handed exercise therefore has real words for the left hand, while the right hand has to be padded with syllables, or there would be nothing to build a line from.</p>
+  <h2>How this was computed</h2>
+  <p>I computed both statistics myself. They are not taken from English sources, where they would apply to a different layout anyway. The method is simple. Take the program's word list, assign each letter a finger and a hand from the finger map, and walk the adjacent letter pairs in every word. A pair where the same finger serves both characters, and the key is not the same one twice, counts.</p>
+  <p>One limitation deserves saying out loud. The list holds five hundred and thirty-nine words and was chosen so that it can be used in exercises for a child, not to represent Czech as a whole. The numbers therefore describe what is hard in these words. The ranking of the worst pairs would probably survive on a larger corpus; the exact counts would not.</p>
+  <h2>English words on a Czech keyboard</h2>
+  <p>The swapped Y and Z is the worst trap when typing English on a Czech keyboard, and it catches people who otherwise type confidently. The lesson of English vocabulary therefore has a step of its own, built only from words containing Y or Z. Without it, the two letters would come up too rarely for the difference to sink in.</p>
+</body>
+</html>

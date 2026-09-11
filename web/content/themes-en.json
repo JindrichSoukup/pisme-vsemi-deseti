@@ -1,0 +1,36 @@
+{
+  "minecraft": {
+    "title": "Minecraft anglicky",
+    "words": [
+      "block", "stone", "cobblestone", "dirt", "grass", "sand", "gravel", "wood",
+      "plank", "log", "leaves", "water", "lava", "obsidian", "diamond", "emerald",
+      "gold", "iron", "coal", "redstone", "netherite", "torch", "chest", "furnace",
+      "anvil", "bed", "door", "ladder", "bucket", "boat", "minecart", "rail",
+      "sword", "pickaxe", "axe", "shovel", "bow", "arrow", "shield", "helmet",
+      "armor", "potion", "map", "compass", "clock", "book", "lantern", "banner",
+      "creeper", "zombie", "skeleton", "enderman", "villager", "blaze", "ghast",
+      "slime", "spider", "piglin", "axolotl", "allay", "warden", "wolf", "llama",
+      "fox", "bee", "dolphin", "turtle", "panda", "parrot", "sheep", "chicken",
+      "craft", "mine", "build", "survive", "creative", "spawn", "respawn",
+      "biome", "nether", "portal", "dungeon", "village", "temple", "cave",
+      "health", "hunger", "inventory", "seed", "world", "night", "day", "farm"
+    ],
+    "sentences": [
+      "I built a house from stone and wood.",
+      "The creeper blew up my front door.",
+      "Diamonds are found deep underground.",
+      "Never dig straight down.",
+      "A torch keeps the mobs away.",
+      "I need iron to make a pickaxe.",
+      "The village has a farm and a well.",
+      "Water and lava make obsidian.",
+      "Sleep in a bed to skip the night.",
+      "Wolves can be tamed with bones.",
+      "My chest is full of gold and coal.",
+      "The enderman teleported behind me.",
+      "I planted wheat next to the water.",
+      "Put the boat in the river and sail.",
+      "The warden lives in the deep dark."
+    ]
+  }
+}

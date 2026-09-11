@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Píšeme všemi deseti</title>
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%234a7c59'/%3E%3Ctext%20x='32'%20y='44'%20font-size='34'%20text-anchor='middle'%20fill='%23fff'%20font-family='Georgia,serif'%3EA%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <header class="topbar" id="topbar" hidden>
+    <span class="topbar__brand">Píšeme všemi deseti</span>
+    <nav>
+      <button data-go="home">Lekce</button>
+      <button data-go="notebook">Notýsek</button>
+    </nav>
+    <button data-go="profiles" class="btn-quiet" id="whoami"></button>
+  </header>
+
+  <main id="app" aria-live="polite"></main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

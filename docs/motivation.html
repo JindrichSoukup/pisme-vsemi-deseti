@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Motivating a child who is learning to type</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      max-width: 720px;
+      margin: 4rem auto;
+      padding: 0 1.5rem;
+      line-height: 1.6;
+      color: #1a1a1a;
+    }
+    h1 { margin-bottom: 0.25rem; font-size: 1.6rem; }
+    p.subtitle { color: #555; margin-top: 0; }
+    h2 {
+      font-size: 1.05rem;
+      margin: 2rem 0 0.5rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid #e5e5e5;
+    }
+    h3 { font-size: 0.98rem; margin: 1.5rem 0 0.4rem; color: #333; }
+    p { color: #333; }
+    ul { padding-left: 1.2rem; }
+    li { margin: 0.35rem 0; color: #333; }
+    a { color: #33492F; }
+    .back { font-size: 0.9rem; margin-bottom: 2rem; }
+    pre {
+      background: #f4f4f2;
+      padding: 0.8rem 1rem;
+      border-radius: 3px;
+      overflow-x: auto;
+      font-size: 0.9em;
+      line-height: 1.5;
+    }
+    code {
+      background: #f4f4f2;
+      padding: 0.1em 0.3em;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <p class="back"><a href="index.html">← Jindřich Soukup</a></p>
+
+  <h1>Motivating a child who is learning to type</h1>
+  <p class="subtitle">What I found about children's motivation and how it shaped the program. Most of the decisions about rewards, goals and praise come from here rather than from a hunch.</p>
+
+  <h2>Why it needs thinking about at all</h2>
+  <p>Touch typing is a dull activity with a deferred payoff. For the first few weeks the child is slower than it was with two fingers and can see no benefit at all. That is exactly the situation in which the framing of the work decides the outcome, and exactly where damage is easy to do.</p>
+  <h2>Rewards and intrinsic motivation</h2>
+  <p>A meta-analysis of a hundred and twenty-eight experiments by Deci, Koestner and Ryan, published in 1999, found that tangible rewards tied to engagement, completion or performance undermine intrinsic motivation. The effect is stronger in children than in undergraduates. Positive feedback, by contrast, strengthens intrinsic motivation, both in what people choose to do freely and in how interested they say they are.</p>
+  <p>What decides it is how the recipient reads the reward. The same thing can be information about one's own competence, or an instrument somebody is using to steer you. The first helps; the second hurts.</p>
+  <p>The overjustification effect belongs here too. A reward promised in advance for an activity that was enjoyable in itself reduces interest in it. The same reward given as a surprise, after the fact, does not, because the child never connects it to the reason it was doing the thing. In children the undermining is more pronounced than in adults.</p>
+  <h3>What the program does with that</h3>
+  <ul>
+    <li>While typing, the screen is quiet. No points, no countdown, nothing flashing.</li>
+    <li>The picture for the scrapbook arrives only after a finished lesson, and is never promised beforehand.</li>
+    <li>It does not arrive every time. Irregularity keeps it a surprise; a reliable reward would quickly turn into an expected entitlement.</li>
+    <li>The scrapbook shows earned pictures only. Locked slots would turn the reward into a to-do list, which is precisely the known-in-advance goal that does the damage.</li>
+  </ul>
+  <h2>Goals</h2>
+  <p>In 1981 Bandura and Schunk worked with forty children aged seven to ten who had large gaps in arithmetic and disliked it. They split them into three groups: proximal sub-goals, one distant goal, no goal. The group with proximal goals progressed fastest, reached the best mastery and the highest belief in their own ability, and ended up the most interested in arithmetic. The distant goal had no demonstrable effect and came out much like no goal at all.</p>
+  <p>The age matters. These were children of seven to ten, exactly the age this program is written for, working on material they had not managed before and did not enjoy. That is the same situation as touch typing. The proximal goal did not merely do somewhat better: the distant goal did essentially nothing, even though both groups got identical materials and identical time.</p>
+  <h3>What the program does with that</h3>
+  <ul>
+    <li>On the home screen the child has one single goal, today's. Ten minutes, set by the parent.</li>
+    <li>During a lesson, after every exercise, the program says how many are left and roughly how many minutes that is, computed from how fast the child actually types.</li>
+    <li>The daily goal is reachable. If the exercises were shortened, the child would fall short of it and would have to decide whether to start another lesson.</li>
+  </ul>
+  <h3>Why the whole ladder of lessons is hidden</h3>
+  <p>This follows directly from that study and is probably the single biggest decision in the design of the screen.</p>
+  <p>Thirty-eight lessons listed one under another are exactly the distant goal Bandura and Schunk showed does not help. It also does two things at once: it shows today's work as a negligible fraction of the whole, and everything else as unfinished. The child would start every day by looking at a long list of what it cannot do yet.</p>
+  <p>The program therefore shows three things, in this order:</p>
+  <ul>
+    <li>Now, the single lesson the child has in progress or ahead of it</li>
+    <li>What you already know, the finished lessons, newest first</li>
+    <li>What is still coming, behind a link that does not open by itself</li>
+  </ul>
+  <p>The finished lessons are reversed on purpose, newest at the top. It looks like a detail, but it changes what the child sees first after today's goal: the last thing it mastered, rather than the easiest thing from its first week. It also keeps the newest lesson within reach when the child wants to show it off or repeat it, instead of scrolling past everything older.</p>
+  <p>The total number of lessons is never shown to the child. Only the parent sees it, in the report.</p>
+  <h2>Praise</h2>
+  <p>In 1998 Mueller and Dweck showed across six studies that praising intelligence has worse motivational consequences than praising effort. Children praised for being clever focused on performance rather than on learning. After a setback they persisted less, enjoyed it less, more often explained the failure by a lack of ability, and performed worse. They also came to treat ability as fixed, while those praised for their work treated it as something that can be improved.</p>
+  <h3>What the program does with that</h3>
+  <ul>
+    <li>It praises the work done, never the child. The program says "that was eleven minutes at the keyboard", not "you are clever".</li>
+    <li>Once the daily goal is met, nothing pushes: stop, or do some more, as you like.</li>
+    <li>After a lesson that went badly the program does not scold. It suggests a break and a slower pace.</li>
+    <li>The wording carries no grammatical gender, so the program works for a boy as well. (Czech marks gender in ordinary adjectives, so this takes effort.)</li>
+    <li>Tests check that words like clever or smart never appear in the praise.</li>
+  </ul>
+  <h2>Stars and feedback</h2>
+  <p>The stars in the program are not a score against other people but a report on your own accuracy against a fixed criterion. One for ninety percent, two for ninety-five, three for ninety-eight plus the lesson's target speed. That kind of judgement falls into the informational category, the one that tends to support intrinsic motivation.</p>
+  <p>Deficit framing is kept out. A summary such as "five stars out of a hundred and fourteen possible", or a count of lessons without a star, is visible to the parent in the report only. The child has three stars per lesson and nothing else.</p>
+  <p>Accuracy outranks speed, because while the technique is still shaky, speed only cements the mistakes. Speed alone therefore cannot earn more than two stars.</p>
+  <h2>Gamification as a whole</h2>
+  <p>Meta-analyses of gamification in education come out mixed. The most consistent finding is that gamification raises perceived autonomy and relatedness and improves intrinsic motivation, but has little effect on perceived competence. The reviews keep repeating two warnings: the novelty effect wears off, and badly designed elements can eclipse the learning content, because the child clicks through quickly for the reward instead of learning.</p>
+  <p>A progress indicator shows up in the reviews as an element that reliably helps, because it makes progress visible and encourages finishing what has been started.</p>
+  <p>Leaderboards, on the other hand, are risky: they motivate the competitive and demotivate everyone else. The claim that a static leaderboard drives away ninety percent of users within a week circulates on vendor blogs and I could not trace a study behind it, so I do not treat it as evidence, only as a warning pointing the same way.</p>
+  <h3>What is deliberately absent</h3>
+  <ul>
+    <li>leaderboards and comparison with other children</li>
+    <li>points, combos and a countdown while typing</li>
+    <li>day streaks used as pressure. A streak appears only from two days, so that a zero never sits on the screen, and breaking one is never commented on</li>
+    <li>rewards promised in advance</li>
+  </ul>
+  <h2>Limits and what to watch</h2>
+  <p>The studies this rests on are from the seventies to the nineties and concern tasks other than typing. The transfer is reasonable, but it is not proof.</p>
+  <p>The novelty effect will wear off here too. When the scrapbook pictures stop working, the answer is not bigger rewards, because that strengthens the very extrinsic motivation that does the harm. The better move is more autonomy: a choice of topic, the option to repeat one part of a lesson, or typing your own text.</p>
+  <p>The observable indicator of whether any of this works is simple. Does the child come back to the program on its own, or only when asked?</p>
+  <h2>Sources</h2>
+  <ul>
+    <li><a href="https://www.researchgate.net/publication/12712628_A_Meta-Analytic_Review_of_Experiments_Examining_the_Effects_of_Extrinsic_Rewards_on_Intrinsic_Motivation">Deci, Koestner, Ryan (1999), a meta-analysis of rewards and intrinsic motivation</a></li>
+    <li><a href="https://uploads-ssl.webflow.com/59faaf5b01b9500001e95457/5bc552d85141987915dab842_Bandura%20&amp;%20Schunk,%201981.pdf">Bandura, Schunk (1981), proximal sub-goals in children</a></li>
+    <li><a href="https://www.columbia.edu/cu/psychology/courses/3615/Readings/Mueller_Dweck.pdf">Mueller, Dweck (1998), praise for intelligence</a></li>
+    <li><a href="https://bingschool.stanford.edu/sites/bingschool/files/1975_leppergreene.pdf">Lepper, Greene (1975), surveillance and extrinsic rewards in children</a></li>
+    <li><a href="https://en.wikipedia.org/wiki/Overjustification_effect">The overjustification effect, an overview</a></li>
+    <li><a href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10591086/">A meta-analysis of the effectiveness of gamification in education</a></li>
+    <li><a href="https://link.springer.com/article/10.1007/s11423-023-10337-7">Gamification and intrinsic motivation, a meta-analysis</a></li>
+  </ul>
+</body>
+</html>

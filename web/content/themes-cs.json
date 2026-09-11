@@ -1,0 +1,101 @@
+{
+  "zvirata": {
+    "title": "Zvířata",
+    "words": [
+      "pes", "kočka", "kůň", "kráva", "ovce", "koza", "prase", "králík", "morče",
+      "křeček", "ježek", "veverka", "liška", "vlk", "medvěd", "jelen", "srnka",
+      "myš", "krtek", "netopýr", "sova", "orel", "vrabec", "sýkorka", "čáp",
+      "labuť", "kachna", "husa", "slepice", "kohout", "holub", "datel", "vlaštovka",
+      "kapr", "štika", "sumec", "pstruh", "úhoř", "žralok", "velryba", "delfín",
+      "tuleň", "žába", "ropucha", "ještěrka", "had", "želva", "krokodýl",
+      "slon", "žirafa", "lev", "tygr", "opice", "klokan", "panda", "velbloud",
+      "zebra", "hroch", "nosorožec", "pavouk", "včela", "vosa", "mravenec",
+      "motýl", "brouk", "moucha", "komár", "vážka", "šnek", "beruška", "housenka"
+    ],
+    "sentences": [
+      "Ježek se v noci probouzí a hledá šneky.",
+      "Veverka schovává oříšky do dutiny stromu.",
+      "Klokan skáče po dvou nohách.",
+      "Žirafa má nejdelší krk ze všech zvířat.",
+      "Netopýr se orientuje podle ozvěny.",
+      "Krtek si hrabe chodby pod zemí.",
+      "Vlaštovky na podzim odlétají na jih.",
+      "Velryba je největší zvíře na světě.",
+      "Včely opylují květiny a dělají med.",
+      "Liška má hustý ocas a chytré oči."
+    ]
+  },
+  "mesta": {
+    "title": "Česká města",
+    "words": [
+      "Praha", "Brno", "Ostrava", "Plzeň", "Liberec", "Olomouc", "Pardubice",
+      "Zlín", "Havířov", "Kladno", "Most", "Opava", "Karviná", "Jihlava",
+      "Teplice", "Děčín", "Chomutov", "Přerov", "Prostějov", "Třebíč", "Třinec",
+      "Tábor", "Znojmo", "Příbram", "Cheb", "Trutnov", "Kolín", "Písek",
+      "Kroměříž", "Šumperk", "Vsetín", "Litvínov", "Břeclav", "Hodonín",
+      "Sokolov", "Klatovy", "Náchod", "Bruntál", "Beroun", "Kralupy", "Slaný",
+      "Krnov", "Vyškov", "Blansko", "Rakovník", "Turnov", "Jičín", "Louny"
+    ],
+    "sentences": [
+      "Praha leží na řece Vltavě.",
+      "Z Brna do Ostravy jede rychlík.",
+      "V Plzni se vaří známé pivo.",
+      "Karlovy Vary jsou lázeňské město.",
+      "Český Krumlov má krásný zámek.",
+      "Hradec Králové leží na soutoku dvou řek.",
+      "České Budějovice mají veliké náměstí.",
+      "Ústí nad Labem najdeš na severu.",
+      "Kutná Hora bývala stříbrným městem.",
+      "Do Olomouce se jezdí za tvarůžky."
+    ]
+  },
+  "dny": {
+    "title": "Dny, měsíce a datumy",
+    "words": [
+      "pondělí", "úterý", "středa", "čtvrtek", "pátek", "sobota", "neděle",
+      "leden", "únor", "březen", "duben", "květen", "červen", "červenec",
+      "srpen", "září", "říjen", "listopad", "prosinec",
+      "1. ledna", "6. února", "14. března", "30. dubna", "1. května",
+      "21. června", "5. července", "28. srpna", "1. září", "28. října",
+      "17. listopadu", "24. prosince", "31. prosince",
+      "12. 4. 2026", "1. 1. 2027", "24. 12. 2026", "8. 6. 2026"
+    ],
+    "sentences": [
+      "V pondělí ráno jdeme do školy.",
+      "Vánoce jsou 24. prosince.",
+      "Prázdniny začínají 1. července.",
+      "Ve středu máme tělocvik.",
+      "Únor má 28 dní, jednou za čtyři roky 29.",
+      "Školní rok začíná 1. září.",
+      "V sobotu a v neděli se nikam nespěchá.",
+      "Můj svátek je 26. července.",
+      "Rok má 12 měsíců a 52 týdnů.",
+      "Do konce roku zbývá 111 dní."
+    ]
+  },
+  "jmena": {
+    "title": "Jména a legrační příjmení",
+    "words": [
+      "Anna", "Eliška", "Tereza", "Adéla", "Natálie", "Karolína", "Kristýna",
+      "Barbora", "Veronika", "Klára", "Marie", "Jakub", "Jan", "Tomáš", "Adam",
+      "Matěj", "Vojtěch", "Filip", "Ondřej", "Lukáš", "Šimon", "Kryštof",
+      "Nesnídal", "Vopršálek", "Čtvrtníček", "Skočdopole", "Vyskočil", "Pospíšil",
+      "Zlatohlávek", "Konopásek", "Kudlička", "Motyčka", "Perníček", "Buchta",
+      "Koláček", "Cibulka", "Mrkvička", "Švestka", "Jahoda", "Hruška", "Kaštánek",
+      "Vrabec", "Sýkora", "Zajíc", "Liška", "Ježek", "Beran", "Kohout", "Křeček",
+      "Novák", "Svoboda", "Dvořák", "Černý", "Procházka", "Bláha", "Doležal"
+    ],
+    "sentences": [
+      "Jmenuji se Eliška a chodím do třetí třídy.",
+      "Pan Vopršálek bydlí hned vedle nás.",
+      "Paní Mrkvičková pěstuje na zahradě mrkev.",
+      "Jakub Skočdopole skočil nejdál ze všech.",
+      "U Perníčků se peče od rána do večera.",
+      "Kamarádka Adéla má příjmení Kaštánková.",
+      "Pan Čtvrtníček přišel ve čtvrtek.",
+      "Novák, Svoboda a Dvořák jsou nejčastější příjmení.",
+      "Ondřej Kudlička sbírá staré známky.",
+      "Tereza Zlatohlávková zpívá ve sboru."
+    ]
+  }
+}

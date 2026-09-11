@@ -1,0 +1,4 @@
+* text=auto
+
+# Davkove soubory musi zustat CRLF, jinak je cmd.exe necte spravne.
+*.bat text eol=crlf

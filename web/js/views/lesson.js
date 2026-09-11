@@ -1,0 +1,471 @@
+/** Průběh jedné lekce: výklad, jednotlivá cvičení, výsledek. */
+
+import { LESSONS, allowedCharsUpTo, knowsUppercase, backspaceAllowedAt } from '../curriculum.js';
+import { buildStep } from '../generator.js';
+import { createEngine } from '../engine.js';
+import { renderKeyboard, highlightChar, keyForChar, FINGERS } from '../keyboard.js';
+import { renderHands, highlightFinger, handOf } from '../hands.js';
+import {
+  computeResult, summarizeKeys, humanDuration, pct, recentSpeed, remainingWork,
+} from '../stats.js';
+import { api, saveResultSafe, saveStickerSafe } from '../api.js';
+import { maybeAward, stickerSvg, printStickers } from '../stickers.js';
+import { esc, starsHtml, focusSoon, plural } from '../ui.js';
+
+let session = null;
+
+export function leave() {
+  // Když odchází uprostřed lekce, poznamenáme si, u kterého cvičení skončila.
+  if (session && session.engine && !session.finished) {
+    rememberProgress(session.app, session.lesson.id, session.stepIdx);
+  }
+  if (session && session.engine) session.engine.destroy();
+  session = null;
+}
+
+/** Uloží nebo smaže poznámku o rozdělané lekci. Výpadek spojení nevadí. */
+function rememberProgress(app, lessonId, step) {
+  const rec = app.profile.lessons[lessonId] || {};
+  if (step === null) delete rec.lastStep;
+  else rec.lastStep = step;
+  app.profile.lessons[lessonId] = rec;
+  api.saveProgress(app.profile.id, lessonId, step).catch(() => {});
+}
+
+export async function render(app, params) {
+  const index = Number.isInteger(params.index) ? params.index : 0;
+  const lesson = LESSONS[index];
+  if (!lesson) return app.go('home');
+
+  session = {
+    app,
+    index,
+    lesson,
+    allowed: allowedCharsUpTo(index),
+    uppercase: knowsUppercase(index),
+    stepIdx: 0,
+    collected: [],   // výsledky jednotlivých kroků
+    engine: null,
+  };
+  renderIntro();
+}
+
+/* ------------------------------------------------------------------ výklad */
+
+function renderIntro() {
+  const { app, lesson, index } = session;
+  const layout = app.profile.settings.layout;
+
+  const fingerNotes = lesson.newKeys
+    .filter((k) => k.length === 1)
+    .map((k) => {
+      const info = keyForChar(k, layout);
+      return info ? `<li><b>${esc(k === ' ' ? 'mezerník' : k)}</b> — ${esc(info.fingerName)}</li>` : '';
+    })
+    .filter(Boolean)
+    .join('');
+
+  app.root.innerHTML = `
+    <div class="stack">
+      <div class="spread">
+        <div>
+          <p class="muted small" style="margin:0">${esc(lesson.block)} · lekce ${index + 1} z ${LESSONS.length}</p>
+          <h1 style="margin:0">${esc(lesson.title)}</h1>
+        </div>
+        <button class="btn-quiet" data-go="home">Zpět na lekce</button>
+      </div>
+
+      <div class="card">
+        <p style="font-size:1.08rem">${esc(lesson.intro.lead)}</p>
+        <ul>${lesson.intro.points.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
+        ${fingerNotes ? `<h3>Který prst</h3><ul>${fingerNotes}</ul>` : ''}
+      </div>
+
+      <div class="card">
+        <div class="kb-row">
+          <div id="kb"></div>
+          <div id="hands"></div>
+        </div>
+        <p class="finger-legend" style="margin-top:.9rem">${legend()}</p>
+      </div>
+
+      ${stepChooser(lesson, app.profile)}
+    </div>`;
+
+  const kb = app.root.querySelector('#kb');
+  renderKeyboard(kb, layout, { taught: session.allowed });
+
+  // ve výkladu svítí ruka a prst, kterým se nová klávesa píše
+  const introHands = app.root.querySelector('#hands');
+  renderHands(introHands);
+  const firstNew = lesson.newKeys.find((k) => k.length === 1);
+  if (firstNew) {
+    const info = keyForChar(firstNew, layout);
+    if (info) highlightFinger(introHands, info.finger);
+  }
+
+  for (const code of lesson.highlightCodes || []) {
+    const el = kb.querySelector(`[data-code="${code}"]`);
+    if (el) el.classList.add('key--next');
+  }
+  // nová písmena lekce svítí už při výkladu
+  if (lesson.newKeys.length) {
+    lesson.newKeys.forEach((k) => {
+      const info = keyForChar(k, layout);
+      if (!info) return;
+      const el = kb.querySelector(`[data-code="${info.dead ? info.steps[0].code : info.code}"]`);
+      if (el) el.classList.add('key--next');
+    });
+  }
+
+  const startBtn = app.root.querySelector('#start');
+  focusSoon(startBtn);
+  startBtn.addEventListener('click', () => {
+    session.stepIdx = Number(startBtn.dataset.step || 0);
+    session.startedAt = session.stepIdx;
+    startStep();
+  });
+
+  app.root.querySelectorAll('[data-jump]').forEach((el) => {
+    el.addEventListener('click', () => {
+      session.stepIdx = Number(el.dataset.jump);
+      session.startedAt = session.stepIdx;
+      startStep();
+    });
+  });
+}
+
+/**
+ * Tlačítko na start a případně i výběr jednotlivých cvičení.
+ *
+ * Když dítě lekci nedokončilo, nabídne se návrat tam, kde skončilo.
+ * Když ji už jednou dělalo, může si zopakovat jen jednu část, protože projíždět
+ * celou lekci znovu kvůli jednomu cvičení nikoho nebaví.
+ */
+export function stepChooser(lesson, profile) {
+  const rec = profile.lessons[lesson.id] || {};
+  const resume = Number.isInteger(rec.lastStep) && rec.lastStep > 0
+    && rec.lastStep < lesson.steps.length ? rec.lastStep : null;
+  const seenBefore = (rec.attempts || []).length > 0 || resume !== null;
+
+  const main = resume !== null
+    ? `<button class="btn-primary btn-big" id="start" data-step="${resume}">
+         Pokračovat: ${esc(lesson.steps[resume].label)}
+       </button>
+       <button class="btn-quiet" data-jump="0">Raději od začátku</button>`
+    : `<button class="btn-primary btn-big" id="start" data-step="0">Jdeme na to</button>`;
+
+  const list = seenBefore
+    ? `<div class="card">
+         <h3>Nebo si zopakuj jen jedno cvičení</h3>
+         <div class="row">
+           ${lesson.steps.map((s, i) =>
+             `<button data-jump="${i}">${i + 1}. ${esc(s.label)}</button>`).join('')}
+         </div>
+       </div>`
+    : '';
+
+  return `<div class="center row" style="justify-content:center">${main}</div>${list}`;
+}
+
+function legend() {
+  return ['lp', 'lr', 'lm', 'li', 'ri', 'rm', 'rr', 'rp']
+    .map((f) => `<span><i style="background:${FINGERS[f].color}"></i>${esc(FINGERS[f].name)}</span>`)
+    .join('');
+}
+
+/* ------------------------------------------------------------------ cvičení */
+
+function startStep() {
+  const { app, lesson, stepIdx } = session;
+  const stepDef = lesson.steps[stepIdx];
+  const built = buildStep(
+    lesson,
+    stepDef,
+    {
+      allowed: session.allowed,
+      keyStats: app.profile.keyStats,
+      uppercase: session.uppercase,
+      layout: app.profile.settings.layout,
+    },
+    stepIdx
+  );
+  session.built = built;
+
+  const showKb = app.profile.settings.showKeyboard;
+
+  app.root.innerHTML = `
+    <div class="stack">
+      <div class="spread">
+        <div>
+          <p class="muted small" style="margin:0">${esc(lesson.title)}</p>
+          <h2 style="margin:0">${esc(built.label)}${built.title ? ' · ' + esc(built.title) : ''}</h2>
+        </div>
+        <div class="row">
+          <span class="muted small">Cvičení ${stepIdx + 1} ze ${lesson.steps.length}</span>
+          <div class="steps-dots" aria-label="postup lekcí">
+            ${lesson.steps.map((_, i) => `<i class="${i < stepIdx ? 'on' : ''} ${i === stepIdx ? 'now' : ''}"></i>`).join('')}
+          </div>
+          <button class="btn-quiet" id="toggle-kb">
+            ${showKb ? 'Skrýt klávesnici' : 'Ukázat klávesnici'}
+          </button>
+          <button class="btn-quiet" data-go="home">Konec</button>
+        </div>
+      </div>
+
+      <div id="typing"></div>
+
+      <p class="hint" id="hint"></p>
+
+      <div class="card" id="kb-card" ${showKb ? '' : 'hidden'}>
+        <div class="kb-row">
+          <div id="kb"></div>
+          <div id="hands"></div>
+        </div>
+      </div>
+    </div>`;
+
+  const kbCard = app.root.querySelector('#kb-card');
+  const kb = app.root.querySelector('#kb');
+  const handsEl = app.root.querySelector('#hands');
+  const hint = app.root.querySelector('#hint');
+  renderKeyboard(kb, app.profile.settings.layout, { taught: session.allowed });
+  renderHands(handsEl);
+  session.handsEl = handsEl;
+
+  const engine = createEngine(app.root.querySelector('#typing'), {
+    sound: app.profile.settings.sound,
+    maxLineErrors: app.profile.settings.maxLineErrors ?? 2,
+    allowBackspace: backspaceAllowedAt(session.index),
+    onProgress: () => updateHint(engine, kb, hint),
+    // při skládání ď nebo Á je háček už stisknutý, nápověda ukáže druhý úhoz
+    onCompose: (active) => updateHint(engine, kb, hint, active),
+    onFinish: (r) => finishStep(r),
+  });
+  session.engine = engine;
+  engine.load(built.lines);
+  engine.focus();
+  updateHint(engine, kb, hint);
+
+  app.root.querySelector('#toggle-kb').addEventListener('click', async (e) => {
+    const nowShown = kbCard.hidden;
+    kbCard.hidden = !nowShown;
+    e.target.textContent = nowShown ? 'Skrýt klávesnici' : 'Ukázat klávesnici';
+    app.profile.settings.showKeyboard = nowShown;
+    engine.focus();
+    api.saveSettings(app.profile.id, { showKeyboard: nowShown }).catch(() => {});
+  });
+}
+
+function updateHint(engine, kb, hintEl, composing = false) {
+  const layout = session.app.profile.settings.layout;
+  const ch = engine.nextChar();
+  const info = highlightChar(kb, ch, layout, composing ? 1 : 0);
+  const step = info && info.dead ? info.steps[composing ? 1 : 0] : info;
+  highlightFinger(session.handsEl, step ? step.finger : null);
+  hintEl.innerHTML = hintText(ch, info, composing);
+}
+
+/**
+ * Text nápovědy nad klávesnicí.
+ *
+ * Ruka se jmenuje "levá ruka", protože ruka je rod ženský, kdežto prst je rod
+ * mužský. Nedají se proto slepit dohromady jako "levá prsteníček". Prst se
+ * uvádí zvlášť za čárkou a bez rodového přívlastku, jinak by tam bylo
+ * "levá ruka, levý prsteníček".
+ */
+export function hintText(ch, info, composing = false) {
+  if (!info) return '';
+  const label = ch === ' ' ? 'mezerník' : ch;
+
+  if (info.dead) {
+    // háček je Shift a klávesa vpravo nahoře, čárka je ta klávesa samotná
+    const mark = info.steps[0].shift ? 'háček' : 'čárka';
+    return composing
+      ? `Teď <b>${esc(label)}</b>: pusť ${esc(mark === 'háček' ? 'háček' : 'čárku')} a stiskni písmeno.`
+      : `Další: <b>${esc(label)}</b> — nejdřív ${esc(mark)} pravým malíčkem, pak teprve písmeno.`;
+  }
+
+  const hand = handOf(info.finger);
+  const fingerOnly = info.fingerName.replace(/^(levý|pravý) /, '');
+  const parts = hand
+    ? [`<span class="hand-name" style="background:${hand.plate};color:${hand.ink}">${hand.name} ruka</span>`,
+       esc(fingerOnly)]
+    : [esc(info.fingerName)];
+
+  if (info.shiftCode) {
+    parts.push(esc(`k tomu Shift ${info.shiftCode === 'ShiftLeft' ? 'levým' : 'pravým'} malíčkem`));
+  }
+  return `Další: <b>${esc(label)}</b> — ${parts.join(', ')}`;
+}
+
+/**
+ * Kolik ještě zbývá, řečeno tak, aby to dítě povzbudilo a ne odradilo.
+ * Ptáme se, jestli to ještě zvládne, protože rozhodnutí má zůstat na něm.
+ */
+export function remainingText({ steps, minutes }) {
+  if (steps <= 0) return 'A to je z téhle lekce všechno.';
+  if (steps === 1) {
+    return `Zbývá poslední cvičení, tak na ${minutes} ${plural(minutes, 'minutu', 'minuty', 'minut')}.`;
+  }
+  const kolik = ['', 'jedno', 'dvě', 'tři', 'čtyři', 'pět', 'šest', 'sedm'][steps] || String(steps);
+  const sloveso = steps >= 2 && steps <= 4 ? 'Zvládneš' : 'Dáš';
+  return `${sloveso} ještě ${kolik} ${plural(steps, 'cvičení', 'cvičení', 'cvičení')}?`
+    + ` Je to tak na ${minutes} ${plural(minutes, 'minutu', 'minuty', 'minut')}.`;
+}
+
+/* ------------------------------------------------- konec kroku a lekce */
+
+function finishStep(raw) {
+  const { app, lesson } = session;
+  session.collected.push(raw);
+
+  rememberProgress(app, lesson.id, session.stepIdx + 1);
+  const isLast = session.stepIdx >= lesson.steps.length - 1;
+  const r = computeResult({ typed: raw.typed, errors: raw.errors, durationMs: raw.durationMs });
+
+  if (isLast) return finishLesson();
+
+  const left = remainingWork(lesson, session.stepIdx + 1, recentSpeed(app.profile));
+
+  app.root.innerHTML = `
+    <div class="stack center">
+      <div class="card">
+        <h2>Cvičení hotové</h2>
+        <div class="metrics" style="justify-content:center">
+          <div class="metric"><b>${r.netCpm}</b><span>úhozů za minutu</span></div>
+          <div class="metric"><b>${pct(r.accuracy)}</b><span>přesnost</span></div>
+        </div>
+        <p style="margin:.8rem 0 0">${esc(remainingText(left))}</p>
+      </div>
+      <div class="row" style="justify-content:center">
+        <button class="btn-quiet" id="again">Znovu</button>
+        <button class="btn-primary btn-big" id="next">Další cvičení</button>
+      </div>
+      <p class="muted small" style="margin:0">
+        <button class="btn-quiet" data-go="home">Konec pro dnešek</button><br>
+        Zbytek lekce na tebe počká, program si pamatuje, kde jsi skončila.
+      </p>
+    </div>`;
+
+  const next = app.root.querySelector('#next');
+  focusSoon(next);
+  next.addEventListener('click', () => {
+    session.stepIdx += 1;
+    startStep();
+  });
+  app.root.querySelector('#again').addEventListener('click', () => {
+    session.collected.pop();
+    startStep();
+  });
+}
+
+async function finishLesson() {
+  const { app, lesson, index } = session;
+  session.finished = true;
+  rememberProgress(app, lesson.id, null);
+  const total = session.collected.reduce(
+    (acc, r) => ({
+      typed: acc.typed + r.typed,
+      errors: acc.errors + r.errors,
+      durationMs: acc.durationMs + r.durationMs,
+      keyLog: acc.keyLog.concat(r.keyLog),
+    }),
+    { typed: 0, errors: 0, durationMs: 0, keyLog: [] }
+  );
+
+  const result = computeResult({ ...total, targetCpm: lesson.targetCpm });
+  const previousBest = (app.profile.lessons[lesson.id] || {}).bestCpm || 0;
+
+  // odměna se losuje ještě před uložením, ať se počítá se stavem před lekcí
+  const award = maybeAward(app.profile, lesson.id, result.stars);
+
+  let saveError = null;
+  try {
+    const saved = await saveResultSafe(app.profile.id, {
+      lessonId: lesson.id,
+      cpm: result.cpm,
+      netCpm: result.netCpm,
+      accuracy: result.accuracy,
+      errors: result.errors,
+      keystrokes: result.typed,
+      durationMs: result.durationMs,
+      stars: result.stars,
+      partial: (session.startedAt || 0) > 0,
+      keys: summarizeKeys(total.keyLog),
+    });
+    app.profile = saved.profile;
+    if (award) {
+      const res = await saveStickerSafe(app.profile.id, award.id, lesson.id);
+      app.profile.stickers = res.stickers;
+    }
+  } catch (err) {
+    saveError = err.message;
+  }
+
+  const isNewBest = result.netCpm > previousBest && previousBest > 0;
+  const hasNext = index < LESSONS.length - 1;
+
+  app.root.innerHTML = `
+    <div class="stack">
+      <div class="card center">
+        <p class="muted small" style="margin:0">${esc(lesson.title)}</p>
+        ${starsHtml(result.stars, 'result-stars')}
+        <p style="font-size:1.1rem">${esc(praise(result))}</p>
+        <div class="metrics" style="justify-content:center">
+          <div class="metric"><b>${result.netCpm}</b><span>úhozů za minutu</span></div>
+          <div class="metric"><b>${pct(result.accuracy)}</b><span>přesnost</span></div>
+          <div class="metric"><b>${humanDuration(result.durationMs / 1000)}</b><span>čistý čas psaní</span></div>
+        </div>
+        ${isNewBest ? '<p class="muted">Tohle je tvůj nový osobní rekord v téhle lekci.</p>' : ''}
+        ${result.stars < 3 ? `<p class="muted small">Tři hvězdičky jsou za přesnost aspoň 98 % a rychlost ${lesson.targetCpm} úhozů za minutu.</p>` : ''}
+      </div>
+
+      ${award ? rewardHtml(award) : ''}
+      ${saveError ? `<div class="notice">
+        <b>Výsledek se teď nepodařilo uložit.</b>
+        Mám ho schovaný a uloží se sám, až se program zase ozve.
+        Zkontroluj, jestli černé okno s programem pořád běží.
+        <span class="small muted">(${esc(saveError)})</span>
+      </div>` : ''}
+
+      <div class="row" style="justify-content:center">
+        <button class="btn-quiet" id="retry">Zkusit lekci znovu</button>
+        <button class="btn-quiet" data-go="home">Zpět na lekce</button>
+        ${hasNext ? '<button class="btn-primary btn-big" id="next-lesson">Další lekce</button>' : ''}
+      </div>
+    </div>`;
+
+  const nextBtn = app.root.querySelector('#next-lesson');
+  if (nextBtn) {
+    focusSoon(nextBtn);
+    nextBtn.addEventListener('click', () => app.go('lesson', { index: index + 1 }));
+  }
+  app.root.querySelector('#retry').addEventListener('click', () => app.go('lesson', { index }));
+
+  const printBtn = app.root.querySelector('#print-sticker');
+  if (printBtn) {
+    printBtn.addEventListener('click', () =>
+      printStickers([{ id: award.id, earnedAt: new Date().toISOString() }], app.profile.name));
+  }
+}
+
+function rewardHtml(sticker) {
+  return `
+    <div class="reward">
+      <p style="margin:0;font-weight:600">Něco pro tebe!</p>
+      ${stickerSvg(sticker.id, 160)}
+      <p style="margin:.2rem 0 1rem"><b>${esc(sticker.name)}</b> ti přibyl do notýsku.</p>
+      <div class="row" style="justify-content:center">
+        <button data-go="notebook">Otevřít notýsek</button>
+        <button class="btn-quiet" id="print-sticker">Vytisknout k vybarvení</button>
+      </div>
+    </div>`;
+}
+
+function praise(r) {
+  if (r.stars === 3) return 'Perfektní! Přesně tak se to má psát.';
+  if (r.stars === 2) return 'Moc pěkně. Ještě kousek k plnému počtu hvězdiček.';
+  if (r.stars === 1) return 'Dobrá práce. Příště zkus psát o něco pomaleji a přesněji.';
+  return 'Tahle lekce byla těžká. Dej si pauzu a zkus ji ještě jednou, pomaleji.';
+}
