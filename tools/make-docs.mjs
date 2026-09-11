@@ -186,7 +186,7 @@ function toHtml(blocks) {
     p { color: #333; }
     ul { padding-left: 1.2rem; }
     li { margin: 0.35rem 0; color: #333; }
-    a { color: #33492F; }
+    a { color: #A8552E; }
     .back { font-size: 0.9rem; margin-bottom: 2rem; }
     pre {
       background: #f4f4f2;
