@@ -63,7 +63,7 @@ function readPortArg() {
 
 /* ---------------------------------------------------------------- profily */
 
-/** Prevede jmeno na bezpecne id souboru: "Anicka" -> "anicka". */
+/** Prevede jmeno na bezpecne id souboru: "Jana Nováková" -> "jana-novakova". */
 function slugify(name) {
   const base = String(name)
     .normalize('NFD')

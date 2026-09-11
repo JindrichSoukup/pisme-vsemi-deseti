@@ -14,7 +14,7 @@ const { LESSONS } = await import('../web/js/curriculum.js');
 function sampleProfile() {
   return {
     id: 'zkouska',
-    name: 'Anička',
+    name: 'Jana Nováková',
     createdAt: '2026-09-01T10:00:00.000Z',
     settings: { layout: 'cs-qwertz' },
     lessons: {

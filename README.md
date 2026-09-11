@@ -181,3 +181,8 @@ tools/make-docx.mjs    generátor dokumentu Word, bez knihoven
 tools/make-docs.mjs    převod rešerší z docs do Wordu
 docs/                  rešerše k didaktice, psychologii a češtině
 ```
+
+## Licence
+
+MIT, viz soubor [LICENSE](LICENSE). Slovníky, věty a tematické sady jsou
+součástí programu a platí pro ně totéž.
