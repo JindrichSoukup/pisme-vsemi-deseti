@@ -19,11 +19,32 @@ import { docx, p, bullet, mono } from './docx.mjs';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const docsDir = path.join(here, '..', 'docs');
 
-/** Odkaz zpátky na rozcestník, stejný jako na ostatních poznámkách. */
-const BACK_LINK = 'index.html';
-
 /** Dokumenty psané anglicky. Kvůli atributu lang, čtečky se podle něj řídí. */
 const ENGLISH = new Set(['didactics.md', 'motivation.md', 'czech-keyboard.md']);
+
+const REPO = 'https://github.com/JindrichSoukup/pisme-vsemi-deseti';
+
+/**
+ * Řádek nahoře. Kromě cesty zpátky na rozcestník říká, k čemu poznámka
+ * patří, protože na ni většina lidí přijde rovnou odjinud a samotný text
+ * program nepředstavuje.
+ */
+const BACK = {
+  cs: `<a href="index.html">← Jindřich Soukup</a> · poznámka k programu
+    <a href="${REPO}">Píšeme všemi deseti</a>, výuce psaní na české klávesnici`,
+  en: `<a href="index.html">← Jindřich Soukup</a> · a note on
+    <a href="${REPO}">Píšeme všemi deseti</a>, a touch-typing course for Czech children`,
+};
+
+/** Táž poznámka v druhém jazyce. Odkaz se nabízí nahoře vedle cesty zpátky. */
+const OTHER_LANGUAGE = {
+  'didaktika.md': 'didactics.md',
+  'didactics.md': 'didaktika.md',
+  'psychologie.md': 'motivation.md',
+  'motivation.md': 'psychologie.md',
+  'cestina.md': 'czech-keyboard.md',
+  'czech-keyboard.md': 'cestina.md',
+};
 
 /**
  * Rozebere Markdown na bloky. Z jednoho rozboru se pak vyrábí Word i HTML,
@@ -130,8 +151,18 @@ function source(text) {
   return m ? `[${m[1]}](${m[2]})` : text;
 }
 
+/** Odkaz na tutéž poznámku v druhém jazyce, nebo prázdno, když protějšek není. */
+function switcher(name) {
+  const other = OTHER_LANGUAGE[name];
+  if (!other) return '';
+  const lang = ENGLISH.has(other) ? 'en' : 'cs';
+  const label = lang === 'en' ? 'English' : 'Česky';
+  const href = other.replace(/\.md$/, '.html');
+  return ` · <a href="${href}" hreflang="${lang}" lang="${lang}">${label}</a>`;
+}
+
 /** Celá stránka poznámky ve vzhledu osobní stránky. */
-function toHtml(blocks, lang = 'cs') {
+function toHtml(blocks, lang = 'cs', other = '') {
   const title = (blocks.find((b) => b.kind === 'heading' && b.level === 1) || {}).text || 'Poznámka';
   const lead = blocks.find((b) => b.kind === 'text');
   const body = [];
@@ -208,7 +239,7 @@ function toHtml(blocks, lang = 'cs') {
   </style>
 </head>
 <body>
-  <p class="back"><a href="${BACK_LINK}">← Jindřich Soukup</a></p>
+  <p class="back">${BACK[lang] || BACK.cs}${other}</p>
 
   <h1>${inline(title)}</h1>
 ${lead ? `  <p class="subtitle">${inline(lead.text)}</p>\n` : ''}
@@ -242,6 +273,6 @@ for (const name of files) {
   const base = name.replace(/\.md$/, '');
   const paragraphs = toDocx(blocks);
   write(path.join(docsDir, `${base}.docx`), docx(paragraphs));
-  write(path.join(docsDir, `${base}.html`), toHtml(blocks, ENGLISH.has(name) ? 'en' : 'cs'));
+  write(path.join(docsDir, `${base}.html`), toHtml(blocks, ENGLISH.has(name) ? 'en' : 'cs', switcher(name)));
   console.log(`${name} -> ${base}.docx (${paragraphs.length} odstavců), ${base}.html`);
 }
