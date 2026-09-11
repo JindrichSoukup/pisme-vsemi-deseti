@@ -22,6 +22,9 @@ const docsDir = path.join(here, '..', 'docs');
 /** Odkaz zpátky na rozcestník, stejný jako na ostatních poznámkách. */
 const BACK_LINK = 'index.html';
 
+/** Dokumenty psané anglicky. Kvůli atributu lang, čtečky se podle něj řídí. */
+const ENGLISH = new Set(['didactics.md', 'motivation.md', 'czech-keyboard.md']);
+
 /**
  * Rozebere Markdown na bloky. Z jednoho rozboru se pak vyrábí Word i HTML,
  * aby se obojí nemohlo rozejít.
@@ -128,7 +131,7 @@ function source(text) {
 }
 
 /** Celá stránka poznámky ve vzhledu osobní stránky. */
-function toHtml(blocks) {
+function toHtml(blocks, lang = 'cs') {
   const title = (blocks.find((b) => b.kind === 'heading' && b.level === 1) || {}).text || 'Poznámka';
   const lead = blocks.find((b) => b.kind === 'text');
   const body = [];
@@ -160,7 +163,7 @@ function toHtml(blocks) {
   closeList();
 
   return `<!DOCTYPE html>
-<html lang="cs">
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -239,6 +242,6 @@ for (const name of files) {
   const base = name.replace(/\.md$/, '');
   const paragraphs = toDocx(blocks);
   write(path.join(docsDir, `${base}.docx`), docx(paragraphs));
-  write(path.join(docsDir, `${base}.html`), toHtml(blocks));
+  write(path.join(docsDir, `${base}.html`), toHtml(blocks, ENGLISH.has(name) ? 'en' : 'cs'));
   console.log(`${name} -> ${base}.docx (${paragraphs.length} odstavců), ${base}.html`);
 }
