@@ -161,20 +161,20 @@ export const LESSONS = [
     ],
   }, standardSteps),
 
-  L('L10', 'Horní řada', 'O a P: pravá ruka nahoru', ['o', 'p'], 85, {
-    lead: 'Pravý prsteníček jde z L nahoru na O a pravý malíček z Ů nahoru na P. S O a P se ti otevře spousta nových slov.',
+  L('L10', 'Horní řada', 'W a O: prsteníčky nahoru', ['w', 'o'], 85, {
+    lead: 'Teď jdou nahoru prsteníčky. Levý ze S na W, pravý z L na O. Obě ruce dělají ten samý pohyb, jen každá na své straně, takže se to dá cvičit střídavě.',
     points: [
-      'Malíček je slabý, ale P musí psát on.',
-      'Prsteníček a malíček se hýbou spolu, drž je uvolněné.',
-      'Zkontroluj, jestli pořád sedíš rovně.',
+      'Prsteníček se natahuje nahoru, ne do strany.',
+      'O je v češtině skoro všude, W skoro nikde. Trefit se musí obojí.',
+      'Ostatní prsty nechej ležet na svých klávesách.',
     ],
   }, standardSteps),
 
-  L('L11', 'Horní řada', 'W a Q: levá ruka nahoru', ['w', 'q'], 85, {
-    lead: 'Levý prsteníček jde ze S nahoru na W a levý malíček z A nahoru na Q. Q se v češtině skoro nepoužívá, ale prst na něj musí umět trefit.',
+  L('L11', 'Horní řada', 'Q a P: malíčky nahoru', ['q', 'p'], 85, {
+    lead: 'Zbývají malíčky. Levý jde z A na Q, pravý z Ů na P. Malíček je nejslabší prst ze všech, takže tohle je z horní řady nejtěžší krok.',
     points: [
-      'Q je úplně vlevo nahoře.',
       'Malíček natahuj nahoru, ne do strany.',
+      'Q se v češtině skoro nepoužívá, ale prst na něj musí umět trefit.',
       'Když je toho moc, dej si pauzu a vrať se za chvíli.',
     ],
   }, standardSteps),
@@ -203,6 +203,28 @@ export const LESSONS = [
       'Když se spleteš, klidně piš dál.',
     ],
   }, reviewSteps),
+
+  /**
+   * W a Q se v českém textu skoro nevyskytují, takže by je prsty po lekcích
+   * 10 a 11 už nikdy nepotkaly. V angličtině jsou přitom běžné. Anglická
+   * slova jsou tedy jediný způsob, jak je dál procvičovat, a dají se složit
+   * hned po horní řadě: quiet, square, water i wheel vystačí s tím, co dítě
+   * v tu chvíli umí.
+   */
+  L('L13B', 'Horní řada', 'W a Q: anglická slovíčka', [], 95, {
+    lead: 'W a Q se v češtině skoro nepíšou, ale v angličtině jsou všude. Dnes si je proto zacvičíme na anglických slovech. Číst je nemusíš umět, jde o prsty.',
+    points: [
+      'W píše levý prsteníček, Q levý malíček. Oba jdou z domovské klávesy nahoru.',
+      'Ve slovech qu se po Q vždycky píše U, ta dvojice chodí spolu.',
+      'Slova jsou anglická, takže se píší jinak, než se čtou. Opisuj je písmeno po písmenu.',
+    ],
+  }, [
+    { kind: 'warmup', label: 'Rozcvička', lines: 2 },
+    { kind: 'english', label: 'Slova s W', lines: 3, mode: 'w' },
+    { kind: 'english', label: 'Slova s Q', lines: 2, mode: 'q' },
+    { kind: 'english', label: 'Všechno dohromady', lines: 3, mode: 'wq' },
+    { kind: 'mixed', label: 'Zpátky do češtiny', lines: 3 },
+  ]),
 
   /* ---------------------------------------------------- dolní řada */
   L('L14', 'Dolní řada', 'V a M: ukazováčky dolů', ['v', 'm'], 95, {

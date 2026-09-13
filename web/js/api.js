@@ -29,6 +29,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ stickerId, lessonId }),
     }),
+  addAssignment: (id, kind) =>
+    req(`/api/users/${id}/assignment`, { method: 'POST', body: JSON.stringify({ kind }) }),
+  removeAssignment: (id, assignmentId) =>
+    req(`/api/users/${id}/assignment/${assignmentId}`, { method: 'DELETE' }),
   deleteUser: (id) => req('/api/users/' + id, { method: 'DELETE' }),
 };
 

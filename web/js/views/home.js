@@ -13,6 +13,7 @@
 import { LESSONS, isUnlocked, nextLessonIndex, lessonIndex } from '../curriculum.js';
 import { currentStreak } from '../stats.js';
 import { esc, starsHtml, plural } from '../ui.js';
+import { kindChildLabel } from '../practice.js';
 import { vocative } from '../vocative.js';
 
 const DEFAULT_GOAL_MINUTES = 10;
@@ -57,18 +58,61 @@ export async function render(app) {
         </div>
       </div>
 
+      ${extraCard(p)}
       ${lessonMap(p, next)}
     </div>`;
 
-  app.root.querySelector('#continue').addEventListener('click', () => {
+  const waiting = pendingAssignment(p);
+  const cont = app.root.querySelector('#continue');
+  if (cont) cont.addEventListener('click', () => {
+    if (waiting) return app.go('lesson', { index: next, practice: waiting.kind, assignmentId: waiting.id });
     app.go('lesson', { index: next });
   });
+
+  const extraBtn = app.root.querySelector('#extra');
+  if (extraBtn) {
+    extraBtn.addEventListener('click', () => {
+      app.go('lesson', { index: next, practice: extraBtn.dataset.kind, assignmentId: extraBtn.dataset.id });
+    });
+  }
 
   app.root.querySelectorAll('[data-lesson]').forEach((el) => {
     el.addEventListener('click', () => {
       app.go('lesson', { index: lessonIndex(el.dataset.lesson) });
     });
   });
+}
+
+/** Nejstarší nehotové cvičení navíc, nebo nic. */
+export function pendingAssignment(profile) {
+  return (profile.assignments || []).find((a) => !a.doneAt) || null;
+}
+
+/**
+ * Karta s opakováním navíc. Je nad mapou lekcí, takže ji dítě uvidí dřív
+ * než další lekci.
+ *
+ * Nikde se nepíše, kdo cvičení zadal ani že je to za trest. Rámuje se jako
+ * to, čím ve skutečnosti je: upevněním dřívější látky před tím, než přijde
+ * nová. Formulace zůstává u práce, ne u dítěte.
+ */
+export function extraCard(profile) {
+  const a = pendingAssignment(profile);
+  if (!a) return '';
+  return `
+    <section class="block">
+      <h3>Napřed si to zopakuj</h3>
+      <div class="card spread">
+        <div>
+          <b>${esc(kindChildLabel(a.kind))}</b>
+          <p class="muted small" style="margin:.2rem 0 0">Krátké zopakování toho, co už umíš, ať to v prstech drží,
+            než se pustíš do nové látky.</p>
+        </div>
+        <button class="btn-primary btn-big" id="extra" data-kind="${esc(a.kind)}" data-id="${esc(a.id)}">
+          Pustit se do toho
+        </button>
+      </div>
+    </section>`;
 }
 
 /**

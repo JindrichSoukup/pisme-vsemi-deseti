@@ -12,6 +12,13 @@ import { keyForChar, FINGERS } from './keyboard.js';
 
 const VOWELS = 'aeiouyáéíóúůýě';
 
+/**
+ * Kolik kousků se chystá na jeden řádek. Na řádek se jich vejde kolem
+ * dvanácti, a kdo dodá míň, tomu zbyde poslední řádek skoro prázdný:
+ * packLines seznam schválně neopakuje dokola.
+ */
+const PER_LINE = 15;
+
 /** Šířka řádku ve znacích. Slova a věty snesou víc, nácvik kláves míň. */
 const LINE_WIDTH = 68;
 const DRILL_WIDTH = 60;
@@ -229,29 +236,78 @@ function buildReach(newKeys, lines, layout = 'cs-qwertz') {
 const HOME_ORDER = ['f', 'j', 'd', 'k', 's', 'l', 'a', 'ů', 'g', 'h'];
 
 /**
+/**
+ * Vybere sevření do rozcvičky.
+ *
+ * Dvě poslední klávesy tam patří vždycky, protože jsou nejčerstvější a drží
+ * nejhůř. Zbytek řádku se losuje ze všech dřív probraných, se sklonem
+ * k těm, které dítěti dělají potíže. Jinak by rozcvička po pár lekcích
+ * připomínala pořád jen tu poslední látku a starší klávesy by z ní vypadly.
+ */
+function pickReaches(reaches, keyStats, allowed, want = 4) {
+  const fresh = reaches.slice(-2);
+  const older = reaches.slice(0, -2);
+  if (!older.length) return fresh;
+
+  const weights = keyWeights(keyStats, [...allowed]);
+  // prostřední znak sevření je ta klávesa, o kterou jde: fgf -> g
+  const weight = (grip) => weights.get(grip[1]) || 1;
+
+  const chosen = [];
+  const pool = older.slice();
+  while (chosen.length < Math.max(0, want - fresh.length) && pool.length) {
+    const grip = weightedPick(pool, weight);
+    chosen.push(grip);
+    pool.splice(pool.indexOf(grip), 1);
+  }
+  return chosen.concat(fresh);
+}
+
+/**
  * Rozcvička na začátek lekce, tedy krátké připomenutí toho, co už dítě umí,
  * ještě než přijde nová klávesa. Přesně takhle začíná lekce v klasické
  * učebnici: nejdřív celá základní řada, pak sevření dřív naučených kláves.
  */
-function buildWarmup(newKeys, allowed, lines, layout = 'cs-qwertz') {
+function buildWarmup(newKeys, allowed, lines, layout = 'cs-qwertz', keyStats = null) {
   const known = [...allowed].filter((c) => !newKeys.includes(c));
   const rows = [];
 
   // stačí dvě dřív naučené klávesy, jinak by rozcvička sklouzla k novým
   const homeRow = HOME_ORDER.filter((c) => known.includes(c)).map((c) => c.repeat(3));
-  if (homeRow.length >= 2) rows.push(fillRow(homeRow.join(' ')));
 
   // klávesy mimo základní řadu se připomenou sevřením mezi domovské úhozy,
   // pořadí v allowed je chronologické, takže na konci jsou ty nejčerstvější
   const reaches = [];
+  const outside = []; // písmena mimo základní řadu, chronologicky
   for (const c of known) {
     if (c === ' ' || c !== c.toLowerCase()) continue;
     const info = keyForChar(c, layout);
-    if (!info || info.dead || info.shift) continue;
-    const home = HOME_OF[info.finger];
-    if (home && home !== c) reaches.push(home + c + home);
+    // Shift znamená znak, který se píše se Shiftem, a ten do rozcvičky nepatří.
+    // U skládaných písmen ale říká jen to, že háček je Shift a čárka ne, takže
+    // se na něj nekouká: jinak by vypadla ď, ť a ň a zůstalo jen ó.
+    if (!info || (info.shift && !info.dead)) continue;
+    // Písmeno skládané mrtvou klávesou se pozná podle prstu, který píše jeho
+    // základ: ď je háček a pak d, takže se sevře mezi domovské d. Bez toho
+    // by ď, ť, ň a ó po své lekci z rozcvičky vypadly nadobro.
+    const finger = info.dead ? (info.steps[1] || {}).finger : info.finger;
+    const home = HOME_OF[finger];
+    if (home && home !== c) {
+      reaches.push(home + c + home);
+      outside.push(c);
+    }
   }
-  if (reaches.length) rows.push(fillRow(reaches.slice(-4).join(' ')));
+  // Základní řada a za ní pár posledních naučených písmen. Ruce se usadí
+  // domů a hned se připomene i to nejčerstvější, aby rozcvička nebyla
+  // pokaždé jeden a tentýž řádek.
+  const latest = outside
+    // g a h se píší nataženým ukazováčkem, ale v prvním řádku už jsou
+    // jako součást základní řady, takže by se zdvojily
+    .filter((c) => !HOME_ORDER.includes(c) && /\p{L}/u.test(c))
+    .slice(-3)
+    .map((c) => c.repeat(3));
+  if (homeRow.length >= 2) rows.push(fillRow(homeRow.concat(latest).join(' ')));
+
+  if (reaches.length) rows.push(fillRow(pickReaches(reaches, keyStats, allowed).join(' ')));
 
   // v úplně prvních lekcích se ještě není co ptát na natažené klávesy,
   // druhý řádek proto udělají slábnoucí skupinky ze dvou známých kláves
@@ -290,7 +346,7 @@ function buildAnchorWords(allowed, lines, layout = 'cs-qwertz', side = 'any') {
   if (usable.length < 4) return null;
 
   const pieces = [];
-  for (const item of shuffle(usable).slice(0, lines * 8)) {
+  for (const item of shuffle(usable).slice(0, lines * PER_LINE)) {
     // kotva stojí před slovem, takže malíček je na Shift připravený včas
     pieces.push(item.anchor.repeat(3), item.word);
   }
@@ -312,8 +368,20 @@ function buildEnglish(allowed, lines, mode = 'words') {
 
   let pool = CONTENT.wordsEn.filter((w) => fits(w, allowed));
   if (mode === 'yz') pool = pool.filter((w) => /[yz]/.test(w));
+  // W a Q se v češtině skoro nepíšou, zato v angličtině pořád. Tyhle režimy
+  // dají dohromady jen slova, ve kterých jsou, jinak by se na ně nesáhlo.
+  if (mode === 'w' || mode === 'q' || mode === 'wq') {
+    const want = mode === 'wq' ? /[wq]/ : new RegExp(mode);
+    pool = pool.filter((w) => want.test(w));
+  }
   if (pool.length < 6) return null;
-  return packLines(shuffle(pool).slice(0, lines * 10), lines);
+
+  // Úzký výběr, třeba slova s Q, nemá dost kousků na celé cvičení. Seznam
+  // se proto zamíchá znovu, dokud jich není dost. Opakování tu nevadí,
+  // je to nácvik jedné klávesy.
+  const pieces = [];
+  while (pieces.length < lines * PER_LINE) pieces.push(...shuffle(pool));
+  return packLines(pieces, lines);
 }
 
 /** Tematická sada: zvířata, česká města, dny a datumy, jména. */
@@ -324,7 +392,7 @@ function buildTheme(allowed, lines, name, mode = 'words') {
     .filter((s) => fits(s, allowed));
   if (pool.length < 4) return null;
   if (mode === 'sentences') return shuffle(pool).slice(0, lines);
-  return packLines(shuffle(pool).slice(0, lines * 10), lines);
+  return packLines(shuffle(pool).slice(0, lines * PER_LINE), lines);
 }
 
 /** Kterou rukou se znak píše, nebo null u složených a neznámých. */
@@ -362,7 +430,7 @@ function buildOneHand(allowed, lines, layout = 'cs-qwertz', side = 'L') {
   const consonants = letters.filter((c) => !VOWELS.includes(c));
 
   const pieces = shuffle(words);
-  const wanted = lines * 8;
+  const wanted = lines * PER_LINE;
   while (pieces.length < wanted && vowels.length && consonants.length) {
     const g = Math.random() < 0.7
       ? pick(consonants) + pick(vowels)
@@ -428,7 +496,7 @@ function buildTwisters(allowed, lines, layout = 'cs-qwertz', mode = 'words') {
     .filter(([, n]) => n > 0)
     .sort((a, b) => b[1] - a[1]);
   if (scored.length < 6) return null;
-  return packLines(shuffle(scored.slice(0, lines * 10)).map(([w]) => w), lines);
+  return packLines(shuffle(scored.slice(0, lines * PER_LINE)).map(([w]) => w), lines);
 }
 
 /**
@@ -564,7 +632,7 @@ function buildWords(newKeys, allowed, lines, opts = {}) {
   let used = new Set();
   let last = null;
   // na řádek se vejde zhruba devět slov, ať se seznam nemusí opakovat
-  const target = lines * 12;
+  const target = lines * PER_LINE;
   for (let guard = 0; guard < target * 25 && chosen.length < target; guard++) {
     if (used.size >= pool.length) used = new Set();
     const w = weightedPick(pool, score);
@@ -573,8 +641,21 @@ function buildWords(newKeys, allowed, lines, opts = {}) {
     last = w;
     chosen.push(opts.capitalize ? w[0].toUpperCase() + w.slice(1) : w);
   }
+
+  // V prvních lekcích jde z probraných písmen složit jen hrstka slov a
+  // řádek by byl pořád ten samý výčet. Doplní se proto slabikami, které
+  // se dají vyrobit donekonečna. Dál už je slovníku dost.
+  if (pool.length < SMALL_POOL && !opts.capitalize) {
+    const filler = buildSyllables(newKeys, allowed, lines, opts.offset || 0)
+      .join(' ')
+      .split(' ');
+    return packLines(interleave(chosen, filler), lines);
+  }
   return packLines(chosen, lines);
 }
+
+/** Pod tolik slov se cvičení míchá se slabikami, ať se pořád neopakuje. */
+const SMALL_POOL = 25;
 
 /** Celé věty. Dokud se neučila velká písmena, píší se malými. */
 function buildSentences(allowed, lines, opts = {}) {
@@ -673,7 +754,7 @@ export function buildStep(lesson, step, ctx, stepIndex = 0) {
     }
 
     case 'warmup': {
-      const warm = buildWarmup(newKeys, allowed, lines, layout);
+      const warm = buildWarmup(newKeys, allowed, lines, layout, keyStats);
       return { label: step.label, lines: warm || buildLetters(newKeys, lines, allowed, 0) };
     }
 

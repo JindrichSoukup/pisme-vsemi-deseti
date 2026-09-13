@@ -25,7 +25,7 @@ Když je port obsazený, dá se zvolit jiný: `node server.js --port 7332`.
 
 ## Co program umí
 
-- **38 lekcí** v pořadí, jaké se u nás používá: nejdřív `f` a `j`, pak zbytek
+- **39 lekcí** v pořadí, jaké se u nás používá: nejdřív `f` a `j`, pak zbytek
   základní řady, horní řada, dolní řada, velká písmena včetně střídání obou
   Shiftů, oprava chyb, háčky a čárky, znaménka a číslice. Na konci jsou
   prstolamy a tematická cvičení pro zábavu.
@@ -64,6 +64,13 @@ Když je port obsazený, dá se zvolit jiný: `node server.js --port 7332`.
   dřou. Program nikdy nedá znak, který se ještě neučil.
 - **Paměť pro každý profil** zvlášť: hotové lekce, hvězdičky, rychlost,
   přesnost, čas u klávesnice a statistika po jednotlivých klávesách.
+- **Měří se po jednotlivých cvičeních, ne jen po lekcích.** Lekce míchá
+  rozcvičku, nácvik kláves i věty dohromady, takže se v jejím průměru ztratí,
+  co dře. Přehled pro rodiče proto ukazuje i tabulku podle druhu cvičení.
+- **Rodič může zadat cvičení navíc** jednoho druhu. Dítě ho uvidí na úvodní
+  stránce nad další lekcí, je kratší než lekce a nová písmena v něm nejsou.
+  Po dokončení se u zadání ukáže porovnání: jak ten druh vypadal předtím
+  a jak dopadlo cvičení navíc.
 - **Virtuální notýsek** jako odměna: linkovaný papír, na který se lepí získané
   obrázky. Na papír se tisknou jen jako obrys, aby si je šlo vybarvit
   a aby stačila černobílá tiskárna.
@@ -181,6 +188,11 @@ tools/make-docx.mjs    generátor dokumentu Word, bez knihoven
 tools/make-docs.mjs    převod rešerší z docs do Wordu
 docs/                  rešerše k didaktice, psychologii a češtině
 ```
+
+## Verze
+
+Co se v které verzi změnilo, je v souboru [CHANGELOG.md](CHANGELOG.md)
+a v [přehledu vydání na GitHubu](https://github.com/JindrichSoukup/pisme-vsemi-deseti/releases).
 
 ## Licence
 

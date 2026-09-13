@@ -85,6 +85,50 @@ export function weakestKeys(keyStats, limit = 10, minPresses = 20) {
   return rows.slice(0, limit);
 }
 
+/**
+ * Souhrn podle druhu cvičení, nejslabší napřed.
+ *
+ * Průměr za celou lekci míchá rozcvičku, nácvik kláves i věty dohromady,
+ * takže se v něm ztratí, co dře. Tady je každý druh zvlášť.
+ *
+ * Řadí se podle přesnosti, protože ta je v celém programu nadřazená
+ * rychlosti. Při shodě rozhoduje pomalejší druh.
+ */
+export function kindSummary(profile) {
+  const rows = Object.entries(profile.kindStats || {}).map(([kind, s]) => {
+    const minutes = s.durationMs / 60000;
+    const netCpm = minutes > 0 ? Math.round(Math.max(0, s.keystrokes - s.errors) / minutes) : 0;
+    const accuracy = s.keystrokes > 0 ? Math.max(0, (s.keystrokes - s.errors) / s.keystrokes) : 0;
+    return {
+      kind,
+      runs: s.runs || 0,
+      keystrokes: s.keystrokes || 0,
+      errors: s.errors || 0,
+      minutes,
+      netCpm,
+      accuracy,
+      trend: trendOf(s.recent || []),
+      lastAt: s.lastAt || null,
+    };
+  });
+
+  return rows.sort((a, b) => a.accuracy - b.accuracy || a.netCpm - b.netCpm);
+}
+
+/**
+ * Kam se druh cvičení ubírá: porovná se první a druhá polovina posledních
+ * měření. Pod čtyři měření se trend neurčuje, to by byl jen šum.
+ */
+export function trendOf(recent) {
+  if (!Array.isArray(recent) || recent.length < 4) return 0;
+  const half = Math.floor(recent.length / 2);
+  const avg = (list) => list.reduce((a, b) => a + b, 0) / list.length;
+  const before = avg(recent.slice(0, half));
+  const after = avg(recent.slice(-half));
+  if (before <= 0) return 0;
+  return Math.round(((after - before) / before) * 100);
+}
+
 /** Váhy pro adaptivní výběr: slabší klávesy dostanou vyšší číslo. */
 export function keyWeights(keyStats, chars) {
   const w = new Map();

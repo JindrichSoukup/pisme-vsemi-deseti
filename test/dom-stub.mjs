@@ -60,6 +60,12 @@ class El {
   focus() { this.dispatch('focus'); }
   blur() { this.dispatch('blur'); }
 
+  // Stub nemá parser HTML, takže po vykreslení do innerHTML se v něm nedá
+  // nic najít. Pohledy proto musí počítat s tím, že hledaný prvek není,
+  // což je stejně správně: obsah se liší podle profilu.
+  querySelector() { return null; }
+  querySelectorAll() { return []; }
+
   /** Text všech potomků, pro kontrolu ve zkoušce. */
   get text() {
     return this.children.length

@@ -290,3 +290,115 @@ test('u prázdného profilu se nic nerozbije', async () => {
   const html = await renderParents(empty);
   assert.match(html, /Zatím žádná dokončená lekce/);
 });
+
+/* ------------------------------------------------ cvičení navíc od rodiče */
+
+const { kindSummary, trendOf } = await import('../web/js/stats.js');
+const { practiceLesson, kindLabel, kindChildLabel, KINDS } = await import('../web/js/practice.js');
+const home = await import('../web/js/views/home.js');
+
+test('souhrn podle druhu cvičení řadí nejslabší nahoru', () => {
+  const profile = {
+    kindStats: {
+      words: { runs: 3, keystrokes: 300, errors: 30, durationMs: 180000, recent: [50, 50, 52, 54] },
+      warmup: { runs: 2, keystrokes: 200, errors: 2, durationMs: 120000, recent: [60, 62] },
+    },
+  };
+  const rows = kindSummary(profile);
+  assert.equal(rows[0].kind, 'words', 'horší přesnost patří nahoru');
+  assert.equal(rows[0].accuracy, 0.9);
+  assert.equal(rows[1].kind, 'warmup');
+  assert.equal(rows[1].netCpm, 99, '198 úhozů za dvě minuty');
+});
+
+test('prázdný profil dá prázdný souhrn druhů', () => {
+  assert.deepEqual(kindSummary({}), []);
+});
+
+test('trend se určuje až od čtyř měření', () => {
+  assert.equal(trendOf([10, 20, 30]), 0, 'tři měření jsou málo');
+  assert.equal(trendOf([50, 50, 60, 60]), 20);
+  assert.equal(trendOf([60, 60, 50, 50]), -17);
+});
+
+test('cvičení navíc se skládá jen z jednoho druhu a z rozcvičky', () => {
+  const lesson = practiceLesson('words', 10);
+  assert.equal(lesson.practice, true);
+  assert.equal(lesson.kind, 'words');
+  assert.equal(lesson.steps[0].kind, 'warmup', 'i cvičení navíc začíná rozcvičkou');
+  assert.ok(lesson.steps.slice(1).every((s) => s.kind === 'words'));
+  assert.ok(lesson.steps.length >= 2 && lesson.steps.length <= 4, 'má být kratší než lekce');
+});
+
+test('rozcvička navíc se nezdvojuje', () => {
+  const lesson = practiceLesson('warmup', 5);
+  assert.ok(lesson.steps.every((s) => s.kind === 'warmup'));
+});
+
+test('druhy vázané na klávesy dostanou písmena z posledních lekcí', () => {
+  const lesson = practiceLesson('reach', 8);
+  assert.ok(lesson.newKeys.length > 0, 'nácvik kláves se bez nich nedá postavit');
+  const words = practiceLesson('words', 8);
+  assert.equal(words.newKeys.length, 0, 'slova žádné nové klávesy nepotřebují');
+});
+
+test('každý druh cvičení má jméno pro rodiče i pro dítě', () => {
+  for (const kind of Object.keys(KINDS)) {
+    assert.ok(kindLabel(kind).length > 2, kind);
+    assert.ok(kindChildLabel(kind).length > 2, kind);
+  }
+});
+
+test('karta se cvičením navíc se ukáže jen když nějaké čeká', () => {
+  assert.equal(home.extraCard({ assignments: [] }), '');
+  assert.equal(home.extraCard({ assignments: [{ id: 'a1', kind: 'words', doneAt: '2026-01-01' }] }), '');
+  const html = home.extraCard({ assignments: [{ id: 'a1', kind: 'words', doneAt: null }] });
+  assert.match(html, /data-kind="words"/);
+  assert.match(html, /Slova/);
+});
+
+test('čeká se vždycky to nejstarší nehotové cvičení', () => {
+  const profile = {
+    assignments: [
+      { id: 'a1', kind: 'words', doneAt: '2026-01-01' },
+      { id: 'a2', kind: 'twisters', doneAt: null },
+      { id: 'a3', kind: 'warmup', doneAt: null },
+    ],
+  };
+  assert.equal(home.pendingAssignment(profile).id, 'a2');
+});
+
+test('porovnání před a po popíše rozdíl slovy', async () => {
+  const { compareText } = await import('../web/js/views/parents.js');
+  assert.equal(compareText(null, { netCpm: 150, accuracy: 0.98 }), '', 'bez dřívějšího nic netvrdíme');
+  assert.equal(compareText({ netCpm: 150, accuracy: 0.95 }, { netCpm: 152, accuracy: 0.95 }), 'beze změny');
+  assert.match(compareText({ netCpm: 100, accuracy: 0.90 }, { netCpm: 120, accuracy: 0.96 }), /přesnost \+6 b\./);
+  assert.match(compareText({ netCpm: 100, accuracy: 0.90 }, { netCpm: 120, accuracy: 0.96 }), /rychlost \+20 %/);
+  assert.match(compareText({ netCpm: 200, accuracy: 0.99 }, { netCpm: 150, accuracy: 0.95 }), /přesnost -4 b\., rychlost -25 %/);
+});
+
+test('cvičení navíc se netváří jako nová látka', async () => {
+  const { installDom } = await import('./dom-stub.mjs');
+  const dom = installDom();
+  const gen = await import('../web/js/generator.js');
+  gen.setContent({ words: ['sen', 'les', 'dar'], sentences: ['ahoj'], texts: [], themes: {} });
+
+  const lessonView = await import('../web/js/views/lesson.js');
+  const app = {
+    profile: { id: 'x', name: 'Zkouška', settings: {}, lessons: {}, keyStats: {}, stickers: [], days: {} },
+    root: dom.root,
+    async refreshProfile() {},
+    go() {},
+  };
+  try {
+    await lessonView.render(app, { index: 9, practice: 'reach', assignmentId: 'a1' });
+  } catch {
+    /* stub nemá skutečný DOM, stačí nám vykreslený text výkladu */
+  }
+  const html = app.root.innerHTML;
+
+  assert.ok(!/Který prst/.test(html), 'výklad nabízí nová písmena, i když žádná nejsou');
+  assert.ok(!/key--next/.test(html), 'na klávesnici svítí písmena jako nová');
+  assert.match(html, /zopakování toho, co už umíš/);
+  assert.ok(!/rodič/i.test(html), 'dítěti se nemá psát, kdo cvičení zadal');
+});

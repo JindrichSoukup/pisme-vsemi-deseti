@@ -1,6 +1,7 @@
 /** Průběh jedné lekce: výklad, jednotlivá cvičení, výsledek. */
 
 import { LESSONS, allowedCharsUpTo, knowsUppercase, backspaceAllowedAt } from '../curriculum.js';
+import { practiceLesson } from '../practice.js';
 import { buildStep } from '../generator.js';
 import { createEngine } from '../engine.js';
 import { renderKeyboard, highlightChar, keyForChar, FINGERS } from '../keyboard.js';
@@ -25,6 +26,7 @@ export function leave() {
 
 /** Uloží nebo smaže poznámku o rozdělané lekci. Výpadek spojení nevadí. */
 function rememberProgress(app, lessonId, step) {
+  if (session && session.lesson && session.lesson.practice) return;
   const rec = app.profile.lessons[lessonId] || {};
   if (step === null) delete rec.lastStep;
   else rec.lastStep = step;
@@ -33,14 +35,19 @@ function rememberProgress(app, lessonId, step) {
 }
 
 export async function render(app, params) {
+  // Cvičení navíc od rodiče. Písmena bere z toho, co dítě zatím probralo,
+  // takže se řídí lekcí, u které je, ne vlastním pořadím v osnově.
+  const practice = params.practice ? practiceLesson(params.practice, params.index ?? 0) : null;
+
   const index = Number.isInteger(params.index) ? params.index : 0;
-  const lesson = LESSONS[index];
+  const lesson = practice || LESSONS[index];
   if (!lesson) return app.go('home');
 
   session = {
     app,
     index,
     lesson,
+    assignmentId: params.assignmentId || null,
     allowed: allowedCharsUpTo(index),
     uppercase: knowsUppercase(index),
     stepIdx: 0,
@@ -56,7 +63,9 @@ function renderIntro() {
   const { app, lesson, index } = session;
   const layout = app.profile.settings.layout;
 
-  const fingerNotes = lesson.newKeys
+  // U cvičení navíc se klávesy berou z dřívějších lekcí jen proto, aby
+  // z nich šel poskládat text. Nová nejsou, takže se ve výkladu nevypisují.
+  const fingerNotes = lesson.practice ? '' : lesson.newKeys
     .filter((k) => k.length === 1)
     .map((k) => {
       const info = keyForChar(k, layout);
@@ -69,7 +78,7 @@ function renderIntro() {
     <div class="stack">
       <div class="spread">
         <div>
-          <p class="muted small" style="margin:0">${esc(lesson.block)} · lekce ${index + 1} z ${LESSONS.length}</p>
+          <p class="muted small" style="margin:0">${lesson.practice ? esc(lesson.block) : esc(lesson.block) + ` · lekce ${index + 1} z ${LESSONS.length}`}</p>
           <h1 style="margin:0">${esc(lesson.title)}</h1>
         </div>
         <button class="btn-quiet" data-go="home">Zpět na lekce</button>
@@ -98,7 +107,7 @@ function renderIntro() {
   // ve výkladu svítí ruka a prst, kterým se nová klávesa píše
   const introHands = app.root.querySelector('#hands');
   renderHands(introHands);
-  const firstNew = lesson.newKeys.find((k) => k.length === 1);
+  const firstNew = lesson.practice ? null : lesson.newKeys.find((k) => k.length === 1);
   if (firstNew) {
     const info = keyForChar(firstNew, layout);
     if (info) highlightFinger(introHands, info.finger);
@@ -109,7 +118,7 @@ function renderIntro() {
     if (el) el.classList.add('key--next');
   }
   // nová písmena lekce svítí už při výkladu
-  if (lesson.newKeys.length) {
+  if (!lesson.practice && lesson.newKeys.length) {
     lesson.newKeys.forEach((k) => {
       const info = keyForChar(k, layout);
       if (!info) return;
@@ -318,7 +327,7 @@ export function remainingText({ steps, minutes }) {
 
 function finishStep(raw) {
   const { app, lesson } = session;
-  session.collected.push(raw);
+  session.collected.push({ ...raw, kind: lesson.steps[session.stepIdx].kind });
 
   rememberProgress(app, lesson.id, session.stepIdx + 1);
   const isLast = session.stepIdx >= lesson.steps.length - 1;
@@ -393,6 +402,15 @@ async function finishLesson() {
       stars: result.stars,
       partial: (session.startedAt || 0) > 0,
       keys: summarizeKeys(total.keyLog),
+      // výsledky po jednotlivých cvičeních, ať se pozná, který druh dře
+      steps: session.collected.map((r) => ({
+        kind: r.kind,
+        typed: r.typed,
+        errors: r.errors,
+        durationMs: r.durationMs,
+      })),
+      practice: !!lesson.practice,
+      assignmentId: session.assignmentId,
     });
     app.profile = saved.profile;
     if (award) {
@@ -404,7 +422,7 @@ async function finishLesson() {
   }
 
   const isNewBest = result.netCpm > previousBest && previousBest > 0;
-  const hasNext = index < LESSONS.length - 1;
+  const hasNext = !lesson.practice && index < LESSONS.length - 1;
 
   app.root.innerHTML = `
     <div class="stack">
@@ -418,7 +436,7 @@ async function finishLesson() {
           <div class="metric"><b>${humanDuration(result.durationMs / 1000)}</b><span>čistý čas psaní</span></div>
         </div>
         ${isNewBest ? '<p class="muted">Tohle je tvůj nový osobní rekord v téhle lekci.</p>' : ''}
-        ${result.stars < 3 ? `<p class="muted small">Tři hvězdičky jsou za přesnost aspoň 98 % a rychlost ${lesson.targetCpm} úhozů za minutu.</p>` : ''}
+        ${!lesson.practice && result.stars < 3 ? `<p class="muted small">Tři hvězdičky jsou za přesnost aspoň 98 % a rychlost ${lesson.targetCpm} úhozů za minutu.</p>` : ''}
       </div>
 
       ${award ? rewardHtml(award) : ''}

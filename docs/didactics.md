@@ -25,6 +25,13 @@ first, then D and K, S and L, A and Ů, then G and H. The top row follows,
 then the bottom row, then capitals, and the accented letters on the number
 row last.
 
+Within a row the pairing is symmetric, the same finger on both hands: E and I
+are the middle fingers, R and U the index fingers, W and O the ring fingers,
+Q and P the little fingers. A pair like that can then be drilled by
+alternating hands, which is the second stage of the drill. The number row with
+the diacritics is the exception: ěščřžýáíé sit side by side and are paired as
+neighbours, because the layout allows no symmetry there.
+
 The ZAV method does it differently. It teaches letters by their frequency in
 Czech and starts from A, because syllables and short words can then be built
 early. After two hundred exercises a student has covered roughly

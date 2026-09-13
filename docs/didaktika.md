@@ -21,6 +21,12 @@ jako sken, jehož textová vrstva je rozsypaná a čte se pozpátku.
 S a L, A a Ů, potom G a H. Následuje horní řada, dolní řada, velká písmena
 a nakonec diakritika na číselné řadě.
 
+Uvnitř každé řady se páruje symetricky, tedy tentýž prst na obou rukou:
+E a I jsou prostředníčky, R a U ukazováčky, W a O prsteníčky, Q a P malíčky.
+Dvojice pak jde cvičit střídáním rukou, což je druhý stupeň nácviku.
+Výjimkou je číselná řada s diakritikou, kde ěščřžýáíé leží vedle sebe
+a páruje se po sousedech, protože symetrii tam rozložení nedovolí.
+
 Metoda ZAV to má jinak. Učí písmena podle četnosti v češtině a začíná od A,
 protože pak jdou brzy skládat slabiky a krátká slova. Po dvou stech cvičeních
 má student probráno zhruba pětaosmdesát procent běžného textu.

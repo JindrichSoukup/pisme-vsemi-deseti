@@ -94,9 +94,11 @@ function emptyProfile(id, name) {
       dailyGoalMinutes: 10, // dnešní cíl, který dítě vidí na úvodní stránce
     },
     lessons: {},  // id lekce -> { stars, bestCpm, bestAccuracy, attempts[] }
+    kindStats: {},// druh cvičení -> { runs, keystrokes, errors, durationMs, recent[] }
     keyStats: {}, // znak -> { presses, errors, latencyEma }
     stickers: [], // { id, earnedAt, lessonId }
     days: {},     // 'YYYY-MM-DD' -> { seconds, keystrokes, errors }
+    assignments: [], // cvičení navíc od rodiče: { id, kind, at, doneAt }
   };
 }
 
@@ -151,9 +153,59 @@ const EMA_ALPHA = 0.2;
  * Tělo z klienta: { lessonId, cpm, netCpm, accuracy, errors, keystrokes,
  *                   durationMs, stars, keys: { znak: { presses, errors, meanLatency } } }
  */
+/**
+ * Výsledky jednotlivých cvičení podle druhu. Odsud se pozná, co dělá
+ * potíže: lekce míchá rozcvičku, nácvik kláves i věty dohromady, takže
+ * samotný průměr za lekci to schová.
+ */
+function applySteps(profile, steps) {
+  if (!Array.isArray(steps)) return;
+  profile.kindStats = profile.kindStats || {};
+
+  for (const s of steps.slice(0, 30)) {
+    const kind = String(s.kind || '').slice(0, 24);
+    if (!kind) continue;
+    const typed = num(s.typed);
+    const ms = num(s.durationMs);
+    if (typed <= 0 || ms <= 0) continue;
+
+    const cur = profile.kindStats[kind]
+      || { runs: 0, keystrokes: 0, errors: 0, durationMs: 0, recent: [] };
+    cur.runs += 1;
+    cur.keystrokes += typed;
+    cur.errors += num(s.errors);
+    cur.durationMs += ms;
+    cur.lastAt = new Date().toISOString();
+    // pár posledních čistých rychlostí kvůli trendu, víc není potřeba
+    cur.recent = (cur.recent || []).concat(Math.round(((typed - num(s.errors)) / ms) * 60000));
+    if (cur.recent.length > 10) cur.recent = cur.recent.slice(-10);
+    profile.kindStats[kind] = cur;
+  }
+}
+
 function applyResult(profile, r) {
   const lessonId = String(r.lessonId || '').slice(0, 32);
   if (!lessonId) throw new Error('chybí lessonId');
+
+  applySteps(profile, r.steps);
+
+  // Cvičení navíc se do osnovy nezapisuje. Nemá hvězdičky ani rekord,
+  // jen se odškrtne jako hotové a započítá do dne a do druhů cvičení.
+  if (r.practice) {
+    const attempt = {
+      at: new Date().toISOString(),
+      netCpm: num(r.netCpm),
+      accuracy: num(r.accuracy),
+      errors: num(r.errors),
+      keystrokes: num(r.keystrokes),
+      durationMs: num(r.durationMs),
+      practice: true,
+    };
+    closeAssignment(profile, String(r.assignmentId || ''), r.steps);
+    applyKeys(profile, r.keys);
+    applyDay(profile, attempt);
+    return attempt;
+  }
 
   const rec = profile.lessons[lessonId] || { stars: 0, bestCpm: 0, bestAccuracy: 0, attempts: [] };
   const attempt = {
@@ -181,8 +233,15 @@ function applyResult(profile, r) {
   rec.lastAt = attempt.at;
   profile.lessons[lessonId] = rec;
 
-  // statistiky jednotlivých kláves
-  for (const [ch, s] of Object.entries(r.keys || {})) {
+  applyKeys(profile, r.keys);
+  applyDay(profile, attempt);
+
+  return attempt;
+}
+
+/** Statistiky jednotlivých kláves. */
+function applyKeys(profile, keys) {
+  for (const [ch, s] of Object.entries(keys || {})) {
     if (typeof ch !== 'string' || ch.length > 4) continue;
     const cur = profile.keyStats[ch] || { presses: 0, errors: 0, latencyEma: 0 };
     cur.presses += num(s.presses);
@@ -195,14 +254,59 @@ function applyResult(profile, r) {
     }
     profile.keyStats[ch] = cur;
   }
+}
 
+/** Denní souhrn, ze kterého se počítá dnešní cíl. */
+function applyDay(profile, attempt) {
   const day = profile.days[today()] || { seconds: 0, keystrokes: 0, errors: 0 };
-  day.seconds += Math.round(attempt.durationMs / 1000);
-  day.keystrokes += attempt.keystrokes;
-  day.errors += attempt.errors;
+  day.seconds += Math.round(num(attempt.durationMs) / 1000);
+  day.keystrokes += num(attempt.keystrokes);
+  day.errors += num(attempt.errors);
   profile.days[today()] = day;
+}
 
-  return attempt;
+/** Hotová cvičení navíc se drží týden, ať je rodič v přehledu ještě vidí. */
+function keepDone(a) {
+  return Date.now() - Date.parse(a.doneAt) < 7 * 24 * 3600 * 1000;
+}
+
+/**
+ * Průměr druhu cvičení k danému okamžiku. Null, když se ještě nedělal.
+ * Drží se u zadání, aby rodič viděl, jak to vypadalo předtím.
+ */
+function snapshot(s) {
+  if (!s || !s.keystrokes || !s.durationMs) return null;
+  return {
+    runs: s.runs || 0,
+    netCpm: Math.round(Math.max(0, s.keystrokes - s.errors) / (s.durationMs / 60000)),
+    accuracy: Math.max(0, (s.keystrokes - s.errors) / s.keystrokes),
+  };
+}
+
+/** Jak dopadla ta cvičení, o která v zadání šlo. */
+function runOf(steps, kind) {
+  const mine = (Array.isArray(steps) ? steps : []).filter((s) => s.kind === kind);
+  const typed = mine.reduce((n, s) => n + num(s.typed), 0);
+  const errors = mine.reduce((n, s) => n + num(s.errors), 0);
+  const ms = mine.reduce((n, s) => n + num(s.durationMs), 0);
+  if (!typed || !ms) return null;
+  return {
+    runs: mine.length,
+    netCpm: Math.round(Math.max(0, typed - errors) / (ms / 60000)),
+    accuracy: Math.max(0, (typed - errors) / typed),
+  };
+}
+
+/** Odškrtne zadané cvičení navíc. Bez id se zavře nejstarší nehotové. */
+function closeAssignment(profile, id, steps) {
+  const list = profile.assignments || [];
+  const open = list.filter((a) => !a.doneAt);
+  const target = open.find((a) => a.id === id) || open[0];
+  if (target) {
+    target.doneAt = new Date().toISOString();
+    target.after = runOf(steps, target.kind);
+  }
+  profile.assignments = list;
 }
 
 function num(v) {
@@ -325,6 +429,36 @@ async function handleApi(req, res, url) {
       return sendJson(res, 200, { ok: true });
     }
 
+    // cvičení navíc, které zadává rodič ze svého přehledu
+    if (parts[3] === 'assignment' && method === 'POST') {
+      const body = await readBody(req);
+      const kind = String(body.kind || '').slice(0, 24);
+      if (!kind) return sendJson(res, 400, { error: 'Chybí druh cvičení.' });
+      // Zadat jde jen druh, který dítě už dělalo. Jinak by se přes cvičení
+      // navíc dostalo k látce, kterou ještě nemělo, třeba k číslicím.
+      if (!(profile.kindStats || {})[kind]) {
+        return sendJson(res, 400, { error: 'Tenhle druh cvičení dítě zatím nedělalo.' });
+      }
+      profile.assignments = (profile.assignments || []).filter((a) => !a.doneAt || keepDone(a));
+      profile.assignments.push({
+        id: 'a' + Date.now().toString(36),
+        kind,
+        at: new Date().toISOString(),
+        doneAt: null,
+        // stav druhu v okamžiku zadání, aby šlo po cvičení porovnat před a po
+        before: snapshot(profile.kindStats[kind]),
+      });
+      await writeProfile(profile);
+      return sendJson(res, 200, profile);
+    }
+
+    if (parts[3] === 'assignment' && method === 'DELETE') {
+      const wanted = String(parts[4] || '');
+      profile.assignments = (profile.assignments || []).filter((a) => a.id !== wanted);
+      await writeProfile(profile);
+      return sendJson(res, 200, profile);
+    }
+
     if (parts[3] === 'sticker' && method === 'POST') {
       const body = await readBody(req);
       const stickerId = String(body.stickerId || '').slice(0, 40);
@@ -402,6 +536,28 @@ if (require.main === module) {
     return null;
   }
 
+  /**
+   * Běžící program drží kód tak, jak vypadal při spuštění. Kdo do něj sáhne,
+   * čeká změnu a nechápe, proč se nic neděje. Tohle na to jednou upozorní,
+   * víckrát ne, ať okno nezahltí.
+   */
+  function watchForChanges() {
+    let said = false;
+    const notice = () => {
+      if (said) return;
+      said = true;
+      log('Soubory programu se změnily. Zavři tohle okno a spusť start.bat znovu,');
+      log('jinak poběží dál ta verze, se kterou se program zapnul.');
+    };
+    for (const target of [__filename, WEB_DIR]) {
+      try {
+        fs.watch(target, { recursive: target === WEB_DIR }, notice).unref();
+      } catch {
+        /* hlídání souborů je jen pohodlí, bez něj program běží dál */
+      }
+    }
+  }
+
   server.listen(PORT, HOST, () => {
     console.log('');
     console.log('  Píšeme všemi deseti  ->  ' + BASE);
@@ -411,6 +567,7 @@ if (require.main === module) {
     console.log('');
     const page = pageToOpen();
     if (page) openBrowser(page);
+    watchForChanges();
   });
 
   server.on('error', (err) => {

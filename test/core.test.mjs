@@ -162,8 +162,9 @@ test('celá česká abeceda se během lekcí probere', () => {
 });
 
 test('velká písmena se považují za známá až od lekce L19', () => {
-  assert.equal(knowsUppercase(17), false);
-  assert.equal(knowsUppercase(18), true);
+  const first = LESSONS.findIndex((l) => l.id === 'L19');
+  assert.equal(knowsUppercase(first - 1), false);
+  assert.equal(knowsUppercase(first), true);
 });
 
 test('další lekce se odemkne hvězdičkou nebo po třech pokusech', () => {
@@ -654,4 +655,213 @@ test('sbírka se nikdy nepřetáhne přes počet obrázků', () => {
     lessons: {},
   };
   assert.equal(maybeAward(p, 'L28', 3), null);
+});
+
+/* ----------------------------------------- cvičení navíc vyrobí vždy text */
+
+test('každý druh cvičení navíc vyrobí text v každé fázi osnovy', async () => {
+  const { practiceLesson, KINDS } = await import('../web/js/practice.js');
+  const { allowedCharsUpTo, knowsUppercase, LESSONS } = await import('../web/js/curriculum.js');
+
+  for (const index of [2, 5, 12, 20, 27, LESSONS.length - 1]) {
+    for (const kind of Object.keys(KINDS)) {
+      const lesson = practiceLesson(kind, index);
+      for (const step of lesson.steps) {
+        const built = buildStep(lesson, step, {
+          allowed: allowedCharsUpTo(index),
+          keyStats: {},
+          uppercase: knowsUppercase(index),
+          layout: 'cs-qwertz',
+        }, 0);
+        assert.ok(built.lines.length, `${kind} v lekci ${index} nevyrobil ani řádek`);
+        for (const line of built.lines) {
+          assert.ok(line.trim().length > 3, `${kind} v lekci ${index}: krátký řádek "${line}"`);
+        }
+      }
+    }
+  }
+});
+
+test('cvičení navíc nesmí použít znak, který se dítě ještě neučilo', async () => {
+  const { practiceLesson } = await import('../web/js/practice.js');
+  const { allowedCharsUpTo, knowsUppercase, LESSONS } = await import('../web/js/curriculum.js');
+  const index = 6;
+  const allowed = allowedCharsUpTo(index);
+
+  // zadat jde jen druh, který dítě už dělalo, proto se bere z probraných lekcí
+  const seen = new Set(LESSONS.slice(0, index + 1).flatMap((l) => l.steps.map((st) => st.kind)));
+
+  for (const kind of seen) {
+    const lesson = practiceLesson(kind, index);
+    for (const step of lesson.steps) {
+      const built = buildStep(lesson, step, {
+        allowed, keyStats: {}, uppercase: knowsUppercase(index), layout: 'cs-qwertz',
+      }, 0);
+      for (const line of built.lines) {
+        for (const ch of line) {
+          if (ch === ' ') continue;
+          assert.ok(allowed.has(ch) || allowed.has(ch.toLowerCase()),
+            `${kind}: znak "${ch}" se ještě neučil`);
+        }
+      }
+    }
+  }
+});
+
+test('rozcvička připomíná i starší klávesy, nejen ty z poslední lekce', () => {
+  const index = LESSONS.findIndex((l) => l.id === 'L17'); // dolní řada, za sebou má základní i horní
+  const lesson = LESSONS[index];
+  const step = lesson.steps.find((s) => s.kind === 'warmup');
+  const allowed = allowedCharsUpTo(index);
+
+  // sevření vypadá jako "fgf": uprostřed je klávesa, o kterou jde
+  const seen = new Set();
+  for (let run = 0; run < 30; run++) {
+    const built = buildStep(lesson, step, { allowed, keyStats: {}, layout: 'cs-qwertz' }, 0);
+    for (const grip of built.lines[1].split(' ')) seen.add(grip[1]);
+  }
+
+  const fromTopRow = [...seen].filter((c) => 'eiruoptzwq'.includes(c));
+  assert.ok(fromTopRow.length >= 3,
+    `rozcvička se drží jen poslední látky, z horní řady se objevilo ${fromTopRow.length} kláves`);
+});
+
+test('rozcvička vždycky připomene i dvě nejčerstvější klávesy', () => {
+  const index = LESSONS.findIndex((l) => l.id === 'L17'); // lekce B a N, nejčerstvější probrané jsou X a tečka
+  const lesson = LESSONS[index];
+  const step = lesson.steps.find((s) => s.kind === 'warmup');
+  const allowed = allowedCharsUpTo(index);
+
+  for (let run = 0; run < 10; run++) {
+    const row = buildStep(lesson, step, { allowed, keyStats: {}, layout: 'cs-qwertz' }, 0).lines[1];
+    assert.match(row, /sxs/, 'chybí nejčerstvější klávesa X');
+    assert.match(row, /l.l/, 'chybí nejčerstvější tečka');
+  }
+});
+
+test('rozcvička nezapomene na písmena skládaná mrtvou klávesou', () => {
+  const index = LESSONS.findIndex((l) => l.id === 'L28'); // hned po lekci s ď ť ň ó
+  const lesson = LESSONS[index];
+  const step = lesson.steps.find((s) => s.kind === 'warmup');
+  const allowed = allowedCharsUpTo(index);
+
+  const seen = new Set();
+  for (let run = 0; run < 40; run++) {
+    const text = buildStep(lesson, step, { allowed, keyStats: {}, layout: 'cs-qwertz' }, 0).lines.join(' ');
+    for (const ch of 'ďťňó') if (text.includes(ch)) seen.add(ch);
+  }
+  assert.ok(seen.size >= 2, `skládaná písmena z rozcvičky vypadla, objevila se jen ${[...seen].join('')}`);
+});
+
+test('každá lekce si v rozcvičce připomene písmena té předchozí', () => {
+  for (let i = 1; i < LESSONS.length; i++) {
+    const step = LESSONS[i].steps.find((s) => s.kind === 'warmup');
+    if (!step) continue;
+    const prev = (LESSONS[i - 1].newKeys || []).filter((k) => k.length === 1 && /\p{Ll}/u.test(k));
+    if (!prev.length) continue;
+
+    const allowed = allowedCharsUpTo(i);
+    for (let run = 0; run < 5; run++) {
+      const text = buildStep(LESSONS[i], step, { allowed, keyStats: {}, layout: 'cs-qwertz' }, 0).lines.join(' ');
+      assert.ok(prev.some((k) => text.includes(k)),
+        `${LESSONS[i].id}: v rozcvičce chybí ${prev.join(' ')} z minulé lekce`);
+    }
+  }
+});
+
+test('první řádek rozcvičky je základní řada a za ní poslední naučená písmena', () => {
+  const index = LESSONS.findIndex((l) => l.id === 'L18'); // po lekcích s X a s B, N
+  const lesson = LESSONS[index];
+  const step = lesson.steps.find((s) => s.kind === 'warmup');
+  const row = buildStep(lesson, step, {
+    allowed: allowedCharsUpTo(index), keyStats: {}, layout: 'cs-qwertz',
+  }, 0).lines[0];
+
+  const groups = row.split(' ');
+  assert.equal(groups[0], 'fff', 'začíná se doma');
+  assert.ok(row.includes('ůůů') && row.includes('hhh'), 'chybí celá základní řada');
+  assert.ok(row.includes('bbb') && row.includes('nnn'), 'chybí písmena z minulé lekce');
+  assert.ok(!/[^\p{L}\s]/u.test(row), `do prvního řádku se dostala interpunkce: ${row}`);
+
+  // v jednom průchodu se žádná skupinka neopakuje, fillRow ho pak celý zopakuje
+  const first = groups.slice(0, 13);
+  assert.equal(new Set(first).size, first.length, `zdvojená skupinka: ${first.join(' ')}`);
+});
+
+test('dvojice písmen v lekci patří stejnému prstu na obou rukou', async () => {
+  const { keyForChar } = await import('../web/js/keyboard.js');
+  // Číselná řada s diakritikou tomu uniká: ěščřžýáíé leží vedle sebe a páruje
+  // se po sousedech, symetrii tam rozložení klávesnice neumožňuje.
+  const numberRow = new Set(['L21', 'L22', 'L23', 'L24', 'L25']);
+
+  for (const lesson of LESSONS) {
+    if (numberRow.has(lesson.id)) continue;
+    const keys = (lesson.newKeys || []).filter((k) => k.length === 1);
+    if (keys.length !== 2) continue;
+
+    const fingers = keys.map((c) => (keyForChar(c, 'cs-qwertz') || {}).finger);
+    if (fingers.some((f) => !f)) continue;
+    assert.equal(fingers[0].slice(1), fingers[1].slice(1),
+      `${lesson.id} (${keys.join(' ')}): každá klávesa patří jinému prstu`);
+    assert.notEqual(fingers[0][0], fingers[1][0],
+      `${lesson.id} (${keys.join(' ')}): obě klávesy jsou na jedné ruce, nejde je střídat`);
+  }
+});
+
+test('v prvních lekcích se slova míchají se slabikami, ať se neopakují', () => {
+  const index = LESSONS.findIndex((l) => l.id === 'L04');
+  const lesson = LESSONS[index];
+  const step = lesson.steps.find((s) => s.kind === 'words');
+  const lines = buildStep(lesson, step, {
+    allowed: allowedCharsUpTo(index), keyStats: {}, layout: 'cs-qwertz',
+  }, 0).lines;
+
+  const pieces = lines.join(' ').split(' ');
+  const counts = new Map();
+  for (const p of pieces) counts.set(p, (counts.get(p) || 0) + 1);
+  // Slov je v téhle fázi šestnáct, takže se bez opakování cvičení složit
+  // nedá. Jde o to, aby jich bylo v oběhu výrazně víc než jen ta slova.
+  const worst = Math.max(...counts.values());
+  assert.ok(worst <= 7, `jeden kousek je v cvičení ${worst}krát, to je moc dokola`);
+  assert.ok(counts.size >= 25, `v cvičení je jen ${counts.size} různých kousků, slovník sám jich dá 16`);
+});
+
+test('slovník nemá duplicity ani znaky mimo českou klávesnici', () => {
+  const here = path.dirname(fileURLToPath(import.meta.url));
+  const words = JSON.parse(fs.readFileSync(path.join(here, '../web/content/words-cs.json'), 'utf8'));
+  assert.equal(words.length, new Set(words).size, 've slovníku je slovo dvakrát');
+
+  const allowed = new Set('abcdefghijklmnopqrstuvwxyzáéíóúůýčďěňřšťž');
+  for (const w of words) {
+    for (const ch of w) {
+      assert.ok(allowed.has(ch), `slovo "${w}" má znak "${ch}", který se na české klávesnici nenapíše`);
+    }
+  }
+});
+
+test('lekce na W a Q staví jen na anglických slovech s těmi písmeny', () => {
+  const index = LESSONS.findIndex((l) => l.id === 'L13B');
+  assert.ok(index > 0, 'lekce na W a Q v osnově chybí');
+
+  const lesson = LESSONS[index];
+  const allowed = allowedCharsUpTo(index);
+  assert.deepEqual(lesson.newKeys, [], 'nová písmena se tu neučí');
+
+  for (const step of lesson.steps.filter((s) => s.kind === 'english')) {
+    const lines = buildStep(lesson, step, { allowed, keyStats: {}, layout: 'cs-qwertz' }, 0).lines;
+    assert.equal(lines.length, step.lines, `${step.label}: chybí řádek`);
+    for (const word of lines.join(' ').split(' ')) {
+      assert.match(word, step.mode === 'q' ? /q/ : /[wq]/,
+        `${step.label}: slovo "${word}" necvičí ani W ani Q`);
+      for (const ch of word) {
+        assert.ok(allowed.has(ch), `slovo "${word}" má znak "${ch}", který se dítě ještě neučilo`);
+      }
+    }
+  }
+});
+
+test('lekce na W a Q leží hned za horní řadou', () => {
+  const index = LESSONS.findIndex((l) => l.id === 'L13B');
+  assert.equal(LESSONS[index - 1].id, 'L13', 'má přijít po dokončené horní řadě');
+  assert.equal(LESSONS[index + 1].block, 'Dolní řada', 'a hned před dolní řadou');
 });
