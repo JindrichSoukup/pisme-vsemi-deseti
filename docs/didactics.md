@@ -29,8 +29,9 @@ Within a row the pairing is symmetric, the same finger on both hands: E and I
 are the middle fingers, R and U the index fingers, W and O the ring fingers,
 Q and P the little fingers. A pair like that can then be drilled by
 alternating hands, which is the second stage of the drill. The number row with
-the diacritics is the exception: ěščřžýáíé sit side by side and are paired as
-neighbours, because the layout allows no symmetry there.
+the diacritics works the same way: Š and Á are the middle fingers, Č and Ý the
+index fingers, Ř and Ž their reach inwards, Ě and Í the ring fingers. Only É is
+left on its own, on the right little finger, because a plus sign faces it.
 
 The ZAV method does it differently. It teaches letters by their frequency in
 Czech and starts from A, because syllables and short words can then be built

@@ -5,6 +5,8 @@
  * ne ve slovech za minutu. Jeden úhoz = jedno stisknutí klávesy včetně mezery.
  */
 
+import { keyForChar, FINGERS } from './keyboard.js';
+
 /** Práh přesnosti pro jednotlivé hvězdičky. */
 const STAR_ACCURACY = [0.9, 0.95, 0.98];
 
@@ -83,6 +85,66 @@ export function weakestKeys(keyStats, limit = 10, minPresses = 20) {
     });
   rows.sort((a, b) => b.score - a.score);
   return rows.slice(0, limit);
+}
+
+/**
+ * Rytmus psaní: kam padají pauzy.
+ *
+ * Výzkum opisu ukazuje, že rytmus zkušeného pisatele není rovnoměrný.
+ * Dvojice psaná střídavě oběma rukama je rychlejší než dvojice jednou rukou
+ * a nejpomalejší je dvojice na jeden prst. Měřit se proto musí po druzích
+ * přechodu, ne jedním průměrem, jinak se rozdíly navzájem vyruší.
+ *
+ * Zvlášť se sleduje hranice slov. Tam podle Salthouse padá plánování dalšího
+ * slova, takže se tam u začátečníka schová pauza, která se v průměru ztratí.
+ */
+const IDLE_STROKE = 5000;
+
+/** Do které skupiny patří přechod z předchozího úhozu na tenhle. */
+export function strokeClass(prev, cur, layout = 'cs-qwertz') {
+  if (!cur) return 'jiné';
+  if (!prev || prev.line !== cur.line) return 'začátek řádku';
+  if (cur.char === ' ') return 'konec slova';
+  if (prev.char === ' ') return 'začátek slova';
+
+  const a = keyForChar(String(prev.char).toLowerCase(), layout);
+  const b = keyForChar(String(cur.char).toLowerCase(), layout);
+  if (!a || !b) return 'jiné';
+  if (b.dead) return 'háček nebo čárka';
+  if (cur.char !== cur.char.toLowerCase()) return 'velké písmeno';
+  if (a.finger === b.finger) return 'stejný prst';
+
+  const handA = (FINGERS[a.finger] || {}).hand;
+  const handB = (FINGERS[b.finger] || {}).hand;
+  if (!handA || !handB) return 'jiné';
+  return handA === handB ? 'stejná ruka' : 'střídání rukou';
+}
+
+/**
+ * Rozebere jedno cvičení. Za zaváhání se počítá úhoz pomalejší než dvojnásobek
+ * mediánu toho samého cvičení. Práh je vlastní, ne absolutní: u pomalého
+ * začátečníka by pevná hranice označila skoro všechno.
+ */
+export function rhythmSummary(keyLog, layout = 'cs-qwertz') {
+  const usable = (keyLog || []).filter((k) => k.latency > 0 && k.latency < IDLE_STROKE);
+  if (!usable.length) return null;
+
+  const sorted = usable.map((k) => k.latency).sort((a, b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)];
+  const limit = median * 2;
+
+  const classes = {};
+  for (let i = 0; i < keyLog.length; i++) {
+    const k = keyLog[i];
+    if (!(k.latency > 0 && k.latency < IDLE_STROKE)) continue;
+    const cls = strokeClass(keyLog[i - 1], k, layout);
+    const s = classes[cls] || (classes[cls] = { strokes: 0, sumMs: 0, slow: 0, errors: 0 });
+    s.strokes += 1;
+    s.sumMs += Math.round(k.latency);
+    if (k.latency > limit) s.slow += 1;
+    if (!k.ok) s.errors += 1;
+  }
+  return { median: Math.round(median), strokes: usable.length, classes };
 }
 
 /**

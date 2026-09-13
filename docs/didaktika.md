@@ -24,8 +24,9 @@ a nakonec diakritika na číselné řadě.
 Uvnitř každé řady se páruje symetricky, tedy tentýž prst na obou rukou:
 E a I jsou prostředníčky, R a U ukazováčky, W a O prsteníčky, Q a P malíčky.
 Dvojice pak jde cvičit střídáním rukou, což je druhý stupeň nácviku.
-Výjimkou je číselná řada s diakritikou, kde ěščřžýáíé leží vedle sebe
-a páruje se po sousedech, protože symetrii tam rozložení nedovolí.
+Platí to i pro číselnou řadu s diakritikou: Š a Á jsou prostředníčky,
+Č a Ý ukazováčky, Ř a Ž jejich krok dovnitř, Ě a Í prsteníčky. Samo
+zůstává jen É na pravém malíčku, protože proti němu leží plus.
 
 Metoda ZAV to má jinak. Učí písmena podle četnosti v češtině a začíná od A,
 protože pak jdou brzy skládat slabiky a krátká slova. Po dvou stech cvičeních

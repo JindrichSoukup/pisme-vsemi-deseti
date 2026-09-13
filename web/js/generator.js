@@ -202,6 +202,22 @@ function buildLetters(newKeys, lines, allowed, phase = 0, offset = 0) {
 /** Domovská klávesa každého prstu. Odsud vyráží a sem se vrací. */
 const HOME_OF = { lp: 'a', lr: 's', lm: 'd', li: 'f', ri: 'j', rm: 'k', rr: 'l', rp: 'ů' };
 
+/** Naposledy probrané sevření druhé ruky, nebo nic. */
+function lastReachOfOtherHand(key, allowed, layout) {
+  const mine = keyForChar(key, layout);
+  if (!mine) return null;
+  const myHand = (FINGERS[mine.finger] || {}).hand;
+  const list = [...allowed].filter((c) => c !== key && c === c.toLowerCase() && /\p{L}/u.test(c));
+  for (const c of list.reverse()) {
+    const info = keyForChar(c, layout);
+    if (!info || info.dead || info.shift) continue;
+    if ((FINGERS[info.finger] || {}).hand === myHand) continue;
+    const home = HOME_OF[info.finger];
+    if (home && home !== c) return home + c + home;
+  }
+  return null;
+}
+
 /**
  * Natažení a návrat: frf juj, fgf jhj, dcd k,k
  *
@@ -211,7 +227,7 @@ const HOME_OF = { lp: 'a', lr: 's', lm: 'd', li: 'f', ri: 'j', rm: 'k', rr: 'l',
  * stihne posunout. Ve starých učebnicích psaní je tenhle chvat u každé klávesy,
  * pro kterou se prst natahuje mimo základní řadu.
  */
-function buildReach(newKeys, lines, layout = 'cs-qwertz') {
+function buildReach(newKeys, lines, layout = 'cs-qwertz', allowed = null) {
   const rows = [];
   const units = [];
   for (const key of newKeys.filter((k) => k.length === 1)) {
@@ -225,6 +241,14 @@ function buildReach(newKeys, lines, layout = 'cs-qwertz') {
     rows.push(fillRow(`${unit} ${home}${home}`));
   }
   if (!rows.length) return null;
+
+  // Lekce přidává jednu klávesu, takže by byl řádek pořád ten samý. Druhá
+  // ruka se přibere z toho, co se probralo naposledy, ať se návrat do
+  // základní polohy cvičí na obou rukou zároveň.
+  if (units.length === 1 && allowed) {
+    const mirror = lastReachOfOtherHand(newKeys[0], allowed, layout);
+    if (mirror) rows.push(fillRow(units[0] + ' ' + mirror));
+  }
   // obě ruce hned za sebou, ať se návrat cvičí na obou najednou
   if (units.length >= 2) rows.push(fillRow(units[0] + ' ' + units[1]));
   const out = [];
@@ -509,7 +533,9 @@ function buildTwisters(allowed, lines, layout = 'cs-qwertz', mode = 'words') {
  * Proto přichází až po předvídatelných vzorcích, ne místo nich.
  */
 function buildMixedKeys(newKeys, allowed, lines) {
-  const fresh = newKeys.filter((k) => k.length === 1);
+  // Skupinky se skládají jen z písmen, takže čárka ani tečka se do nich
+  // nedostanou. Kdyby se braly za nové, nevznikla by ani jedna skupinka.
+  const fresh = newKeys.filter((k) => k.length === 1 && /\p{L}/u.test(k));
   const pool = [...allowed].filter((c) => c !== ' ' && /\p{L}/u.test(c) && c === c.toLowerCase());
   if (pool.length < 2) return buildLetters(newKeys, lines, allowed, 1);
 
@@ -642,6 +668,11 @@ function buildWords(newKeys, allowed, lines, opts = {}) {
     chosen.push(opts.capitalize ? w[0].toUpperCase() + w.slice(1) : w);
   }
 
+  // U lekce se znaménkem se znaménko připojí za každé slovo, jinak by se
+  // nacvičilo jen samo o sobě a nikdy v textu: tak to dělaly i staré kurzy
+  // ve tvaru `boj - krb - bez -`.
+  const marked = opts.punct ? chosen.map((w) => w + opts.punct) : chosen;
+
   // V prvních lekcích jde z probraných písmen složit jen hrstka slov a
   // řádek by byl pořád ten samý výčet. Doplní se proto slabikami, které
   // se dají vyrobit donekonečna. Dál už je slovníku dost.
@@ -649,9 +680,9 @@ function buildWords(newKeys, allowed, lines, opts = {}) {
     const filler = buildSyllables(newKeys, allowed, lines, opts.offset || 0)
       .join(' ')
       .split(' ');
-    return packLines(interleave(chosen, filler), lines);
+    return packLines(interleave(marked, filler), lines);
   }
-  return packLines(chosen, lines);
+  return packLines(marked, lines);
 }
 
 /** Pod tolik slov se cvičení míchá se slabikami, ať se pořád neopakuje. */
@@ -767,7 +798,7 @@ export function buildStep(lesson, step, ctx, stepIndex = 0) {
     }
 
     case 'reach': {
-      const reach = buildReach(newKeys, lines, layout);
+      const reach = buildReach(newKeys, lines, layout, allowed);
       return { label: step.label, lines: reach || buildLetters(newKeys, lines, allowed, 1, stepIndex) };
     }
 
@@ -791,6 +822,7 @@ export function buildStep(lesson, step, ctx, stepIndex = 0) {
         lines: buildWords(newKeys, allowed, lines, {
           keyStats,
           capitalize: step.capitalize,
+          punct: step.punct,
           focusOnly: step.focusOnly,
           offset: stepIndex,
         }),

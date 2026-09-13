@@ -66,6 +66,32 @@ const standardSteps = [
   { kind: 'mixed', label: 'Procvičení', lines: 3 },
 ];
 
+/**
+ * Od dolní řady dál se cvičení prodlužuje ze tří řádků na čtyři. Dítě v té
+ * době píše rychleji, takže lekce zabere pořád zhruba stejný čas, ale nácviku
+ * na jednu klávesu je o třetinu víc.
+ */
+const longSteps = standardSteps.map((s) => (s.kind === 'warmup' ? s : { ...s, lines: 4 }));
+
+/**
+ * Opakovací lekce. Nepřidává klávesu, jen dá dohromady všechno probrané.
+ * Starý DOSový kurz, na kterém se učila celá generace, měl takových lekcí
+ * čtvrtinu. Bez nich připadá na jednu novou klávesu jen zlomek nácviku.
+ */
+/**
+ * Lekce, jejíž nová klávesa není písmeno, tedy čárka, tečka a pomlčka.
+ * Zamíchané skupinky se skládají z písmen, takže by v nich znaménko nebylo
+ * a krok by vyšel naprázdno. Místo něj se rovnou píší slova.
+ */
+const punctSteps = longSteps.filter((s) => s.kind !== 'mixedkeys');
+
+const bigReviewSteps = [
+  warmup,
+  { kind: 'mixedkeys', label: 'Zamíchané skupinky', lines: 3 },
+  { kind: 'words', label: 'Slova', lines: 4 },
+  { kind: 'mixed', label: 'Slova a věty', lines: 4 },
+];
+
 const reviewSteps = [
   warmup,
   { kind: 'words', label: 'Slova', lines: 4 },
@@ -134,66 +160,113 @@ export const LESSONS = [
   }, reviewSteps),
 
   /* ---------------------------------------------------- horní řada */
-  L('L07', 'Horní řada', 'E a I: prostředníčky nahoru', ['e', 'i'], 70, {
-    lead: 'Vyrážíme na horní řadu. Levý prostředníček povyskočí z D na E, pravý prostředníček z K na I. Je to krok šikmo nahoru.',
+  L('L07', 'Horní řada', 'E: levý prostředníček nahoru', ['e'], 70, {
+    lead: 'Vyrážíme na horní řadu. Levý prostředníček povyskočí z D na E a hned se vrátí zpátky. Je to krok šikmo nahoru, ruka zůstává dole.',
     points: [
       'Prst jde nahoru a hned zpátky, jako když si sáhneš na horkou plotnu.',
-      'S novými samohláskami už půjde napsat spoustu slov.',
+      'E je první samohláska kromě A, takže se hned objeví opravdová slova.',
       'Ruka zůstává na místě, hýbe se jen prst.',
     ],
   }, standardSteps),
 
-  L('L08', 'Horní řada', 'R a U: ukazováčky nahoru', ['r', 'u'], 75, {
-    lead: 'Levý ukazováček skočí z F nahoru na R, pravý ukazováček z J nahoru na U. Obě klávesy jsou přímo nad domovskou klávesou, jen o kousek doleva.',
+  L('L07B', 'Horní řada', 'I: pravý prostředníček nahoru', ['i'], 70, {
+    lead: 'Pravý prostředníček dělá totéž, co včera dělal levý: skočí z K na I. Obě ruce tak umí ten samý pohyb a dají se střídat.',
     points: [
-      'R je nad F, U je nad J.',
-      'Po úhozu zase nahmatej hrbolek.',
-      'Kdyby ti prst bloudil, zpomal a napiš to znovu.',
+      'I je nad K, stejně jako E nad D.',
+      'V posledním cvičení se E a I střídají, tam se pozná, jestli to prsty umí.',
+      'Po úhozu nahmatej hrbolek na F nebo J.',
     ],
   }, standardSteps),
 
-  L('L09', 'Horní řada', 'T a Z: krok šikmo', ['t', 'z'], 80, {
-    lead: 'Pozor, tady se česká klávesnice liší od anglické. Na české klávesnici je Z nahoře, tam kde bývá anglické Y. Píše ho pravý ukazováček. T bere levý ukazováček.',
+  L('L08', 'Horní řada', 'R: levý ukazováček nahoru', ['r'], 75, {
+    lead: 'Levý ukazováček skočí z F nahoru na R. Klávesa je přímo nad domovskou, jen o kousek doleva.',
     points: [
-      'Z je nahoře v horní řadě, ne dole.',
-      'T a Z jsou od domovské klávesy trochu dál, prst se musí natáhnout.',
+      'R je nad F.',
+      'Natahuje se jenom prst, ruka i ostatní prsty zůstávají.',
+      'Po úhozu zase nahmatej hrbolek.',
+    ],
+  }, standardSteps),
+
+  L('L08B', 'Horní řada', 'U: pravý ukazováček nahoru', ['u'], 75, {
+    lead: 'Pravý ukazováček skočí z J nahoru na U. Je to zrcadlo toho, co včera dělal levý ukazováček s R.',
+    points: [
+      'U je nad J.',
+      'R a U se ti budou střídat pořád, je to častá dvojice.',
+      'Zkontroluj, jestli pořád sedíš rovně.',
+    ],
+  }, standardSteps),
+
+  L('L09R', 'Horní řada', 'Opakování: E, I, R a U', [], 80, {
+    lead: 'Dnes nic nového. Čtyři klávesy horní řady se musí usadit, než přidáme další.',
+    points: [
+      'Zkus se na klávesnici vůbec nedívat.',
+      'Když uděláš chybu, piš dál. Opravovat se bude až později.',
+      'Radši pomalu a správně než rychle a špatně.',
+    ],
+  }, bigReviewSteps),
+
+  L('L09', 'Horní řada', 'T: krok šikmo doprava', ['t'], 80, {
+    lead: 'T leží napravo od R a bere ho taky levý ukazováček. Prst se musí natáhnout dál než u R, šikmo nahoru a doprava.',
+    points: [
+      'T je nad G, obě klávesy bere levý ukazováček.',
+      'Je to delší natažení, dej pozor, aby se ruka neposunula.',
       'Ostatní prsty nechej ležet.',
     ],
   }, standardSteps),
 
-  L('L10', 'Horní řada', 'W a O: prsteníčky nahoru', ['w', 'o'], 85, {
-    lead: 'Teď jdou nahoru prsteníčky. Levý ze S na W, pravý z L na O. Obě ruce dělají ten samý pohyb, jen každá na své straně, takže se to dá cvičit střídavě.',
+  L('L09B', 'Horní řada', 'Z: krok šikmo doleva', ['z'], 80, {
+    lead: 'Tady se česká klávesnice liší od anglické. Na české je Z nahoře, tam kde bývá anglické Y. Píše ho pravý ukazováček nataženým krokem doleva nahoru.',
+    points: [
+      'Z je nahoře v horní řadě, ne dole.',
+      'Je to zrcadlo toho, co dělá levý ukazováček s T.',
+      'Po úhozu se prst vrací na J.',
+    ],
+  }, standardSteps),
+
+  L('L10', 'Horní řada', 'W: levý prsteníček nahoru', ['w'], 85, {
+    lead: 'Teď jde nahoru levý prsteníček, ze S na W. W se v češtině skoro nepoužívá, ale prst na něj musí umět trefit.',
     points: [
       'Prsteníček se natahuje nahoru, ne do strany.',
-      'O je v češtině skoro všude, W skoro nikde. Trefit se musí obojí.',
+      'Prsteníček je línější než ostatní, dej mu čas.',
       'Ostatní prsty nechej ležet na svých klávesách.',
     ],
   }, standardSteps),
 
-  L('L11', 'Horní řada', 'Q a P: malíčky nahoru', ['q', 'p'], 85, {
-    lead: 'Zbývají malíčky. Levý jde z A na Q, pravý z Ů na P. Malíček je nejslabší prst ze všech, takže tohle je z horní řady nejtěžší krok.',
+  L('L10B', 'Horní řada', 'O: pravý prsteníček nahoru', ['o'], 85, {
+    lead: 'Pravý prsteníček jde z L nahoru na O. Na rozdíl od W je O v češtině skoro všude, takže se ti otevře spousta nových slov.',
+    points: [
+      'O je nad L, stejně jako W nad S.',
+      'S O půjde napsat kolo, okno i kotě.',
+      'Prsteníčky se hýbou hůř, proto mají vlastní lekci.',
+    ],
+  }, standardSteps),
+
+  L('L11', 'Horní řada', 'Q: levý malíček nahoru', ['q'], 85, {
+    lead: 'Levý malíček jde z A na Q. Je to nejslabší prst a nejdelší natažení, takže je tohle z horní řady nejtěžší krok.',
     points: [
       'Malíček natahuj nahoru, ne do strany.',
-      'Q se v češtině skoro nepoužívá, ale prst na něj musí umět trefit.',
+      'Q se v češtině skoro nepoužívá, ale v angličtině ano.',
       'Když je toho moc, dej si pauzu a vrať se za chvíli.',
+    ],
+  }, standardSteps),
+
+  L('L11B', 'Horní řada', 'P: pravý malíček nahoru', ['p'], 85, {
+    lead: 'Pravý malíček jde z Ů nahoru na P. Malíček je slabý, ale P musí psát on, jinak se ruka pokaždé posune.',
+    points: [
+      'P je nad Ů.',
+      'Prsteníček a malíček se hýbou spolu, drž je uvolněné.',
+      'S P přibudou slova jako pes, pole nebo poklad.',
     ],
   }, standardSteps),
 
   L('L12', 'Horní řada', 'Ú a celá horní řada', ['ú'], 90, {
     lead: 'Ú leží napravo od P a píše ho pravý malíček. Tím máme celou horní řadu hotovou: q w e r t  z u i o p ú.',
     points: [
-      'Ú se píše na začátku slova a po předponě, Ů uprostřed a na konci.',
-      'Malíček to má daleko, natáhni ho, ale ruku nechej na místě.',
-      'Po úhozu se malíček vrátí zpátky na Ů.',
+      'Ú je hned vedle P, malíček se natáhne ještě o kousek dál.',
+      'Ú se píše na začátku slova, uvnitř slova bývá ů.',
+      'Zkus si celou horní řadu přeříkat nahlas.',
     ],
-  }, [
-    warmup,
-    { kind: 'letters', label: 'Nové písmeno', lines: 2, phase: 0 },
-    { kind: 'reach', label: 'Zpátky domů', lines: 2 },
-    { kind: 'syllables', label: 'Slabiky', lines: 2 },
-    { kind: 'words', label: 'Slova', lines: 4 },
-    { kind: 'mixed', label: 'Procvičení', lines: 3 },
-  ]),
+  }, standardSteps),
 
   L('L13', 'Horní řada', 'Základní a horní řada dohromady', [], 100, {
     lead: 'Umíš už dvě celé řady. Dnes je spojíme dohromady a budeme psát opravdová slova.',
@@ -202,11 +275,11 @@ export const LESSONS = [
       'Mezerník mačkej palcem hned po posledním písmenu slova.',
       'Když se spleteš, klidně piš dál.',
     ],
-  }, reviewSteps),
+  }, bigReviewSteps),
 
   /**
-   * W a Q se v českém textu skoro nevyskytují, takže by je prsty po lekcích
-   * 10 a 11 už nikdy nepotkaly. V angličtině jsou přitom běžné. Anglická
+   * W a Q se v českém textu skoro nevyskytují, takže by je prsty po svých
+   * lekcích už nikdy nepotkaly. V angličtině jsou přitom běžné. Anglická
    * slova jsou tedy jediný způsob, jak je dál procvičovat, a dají se složit
    * hned po horní řadě: quiet, square, water i wheel vystačí s tím, co dítě
    * v tu chvíli umí.
@@ -227,50 +300,113 @@ export const LESSONS = [
   ]),
 
   /* ---------------------------------------------------- dolní řada */
-  L('L14', 'Dolní řada', 'V a M: ukazováčky dolů', ['v', 'm'], 95, {
-    lead: 'Jdeme dolů. Levý ukazováček sjede z F dolů na V, pravý ukazováček z J dolů na M. Dolní řada je nejtěžší, protože prst musí pod dlaň.',
+  L('L14', 'Dolní řada', 'V: levý ukazováček dolů', ['v'], 95, {
+    lead: 'Jdeme do dolní řady. Levý ukazováček sjede z F dolů na V. Dolní řada je pro prsty nezvyklá, protože se musí skrčit, ne natáhnout.',
     points: [
-      'Prst jde dolů a šikmo dovnitř.',
-      'Dlaň nepokládej na stůl, jinak se prst dolů nedostane.',
-      'Po každém úhozu zpátky na hrbolek.',
+      'V je pod F, jen o kousek doprava.',
+      'Prst se krčí, dlaň zůstává ve stejné výšce.',
+      'Po úhozu zase nahoru na hrbolek.',
     ],
-  }, standardSteps),
+  }, longSteps),
 
-  L('L15', 'Dolní řada', 'C a čárka', ['c', ','], 95, {
-    lead: 'Levý prostředníček sjede z D dolů na C. Pravý prostředníček sjede z K dolů na čárku. Čárka se ve větě píše hned za slovem, bez mezery před ní.',
+  L('L14B', 'Dolní řada', 'M: pravý ukazováček dolů', ['m'], 95, {
+    lead: 'Pravý ukazováček sjede z J dolů na M. Je to zrcadlo toho, co včera dělal levý ukazováček s V.',
     points: [
-      'Za čárkou vždycky mezera, před čárkou nikdy.',
-      'Prostředníček jde dolů rovně.',
-      'Ostatní prsty zůstávají ležet v základní poloze.',
+      'M je pod J.',
+      'V a M jsou obě pro ukazováčky, jen každé na své straně.',
+      'Zkontroluj, že se ti neposouvá celá ruka.',
     ],
-  }, standardSteps),
+  }, longSteps),
 
-  L('L16', 'Dolní řada', 'X a tečka', ['x', '.'], 100, {
-    lead: 'Levý prsteníček sjede z S dolů na X, pravý prsteníček z L dolů na tečku. Tečkou se končí věta.',
+  L('L15', 'Dolní řada', 'C: levý prostředníček dolů', ['c'], 95, {
+    lead: 'Levý prostředníček sjede z D dolů na C. S C přibude i spojení CH, které se v češtině píše jako dvě klávesy za sebou.',
     points: [
-      'Za tečkou se dělá mezera, před tečkou ne.',
-      'Prsteníček dolů, a hned zpátky.',
-      'Teď už umíš napsat celou větu.',
+      'C je pod D.',
+      'CH se píše C a pak H, žádná zvláštní klávesa na to není.',
+      'Prsteníček i malíček nechej ležet na svém místě.',
     ],
-  }, standardSteps),
+  }, longSteps),
 
-  L('L17', 'Dolní řada', 'B a N: krok dovnitř', ['b', 'n'], 100, {
-    lead: 'B a N jsou uprostřed dolní řady. Levý ukazováček bere B, pravý ukazováček bere N. Je to nejdelší cesta, kterou ukazováček podniká.',
+  L('L15B', 'Dolní řada', 'Čárka: pravý prostředníček dolů', [','], 95, {
+    lead: 'Pod pravým prostředníčkem leží čárka. Je to první znaménko, které se učíš, a píše se úplně stejným pohybem jako C na druhé straně.',
     points: [
-      'B patří levému ukazováčku, N pravému.',
-      'Ruka se neposouvá, jen se prst natáhne.',
-      'Když se spleteš, zpomal a zkus to ještě jednou.',
+      'Čárka je pod K.',
+      'Za čárkou se vždycky píše mezera, před ní nikdy.',
+      'Ve cvičení se čárka objeví uvnitř řádku, tak jak ji potkáš v textu.',
     ],
-  }, standardSteps),
+  }, punctSteps.map((st) => (st.kind === 'words' || st.kind === 'mixed' ? { ...st, punct: ',' } : st))),
 
-  L('L18', 'Dolní řada', 'Y a pomlčka: malíčky dolů', ['y', '-'], 105, {
-    lead: 'Na české klávesnici je Y dole vlevo, píše ho levý malíček. Pomlčku najdeš dole vpravo a píše ji pravý malíček. Tím máš hotová všechna písmena bez háčků a čárek.',
+  L('L16R', 'Dolní řada', 'Opakování: V, M, C a čárka', [], 100, {
+    lead: 'Dnes nic nového. Dolní řada je pro prsty nejnezvyklejší, tak si ji usadíme, než přidáme další klávesy.',
     points: [
-      'Y je dole, Z je nahoře. Nepleť si to.',
-      'Malíčky dolů: levý na Y, pravý na pomlčku.',
-      'Gratuluju, umíš celou abecedu.',
+      'Po každém úhozu dolů se prst vrací na svou domovskou klávesu.',
+      'Když se ti plete, zpomal. Přesnost je víc než rychlost.',
+      'Na ruce se nedívej, radši se podívej na obrázek na obrazovce.',
     ],
-  }, standardSteps),
+  }, bigReviewSteps),
+
+  L('L16', 'Dolní řada', 'X: levý prsteníček dolů', ['x'], 100, {
+    lead: 'Levý prsteníček sjede z S dolů na X. X se v češtině objeví jen ve slovech jako box nebo taxi, ale prst na něj musí trefit.',
+    points: [
+      'X je pod S.',
+      'Prsteníček se krčí hůř než ostatní prsty, dej mu čas.',
+      'Ruka zůstává na místě.',
+    ],
+  }, longSteps),
+
+  L('L16B', 'Dolní řada', 'Tečka: pravý prsteníček dolů', ['.'], 100, {
+    lead: 'Pod pravým prsteníčkem leží tečka. Konec věty, jedno z nejčastějších znamének vůbec.',
+    points: [
+      'Tečka je pod L.',
+      'Za tečkou se píše mezera, před ní ne.',
+      'Po tečce začíná další věta velkým písmenem. Ta přijdou brzy.',
+    ],
+  }, punctSteps.map((st) => (st.kind === 'words' || st.kind === 'mixed' ? { ...st, punct: '.' } : st))),
+
+  L('L17', 'Dolní řada', 'B: krok dovnitř zleva', ['b'], 100, {
+    lead: 'B leží uprostřed dolní řady a bere ho levý ukazováček nataženým krokem doprava dolů. Je to stejný chvat jako T v horní řadě, jen opačným směrem.',
+    points: [
+      'B je napravo od V, prst se musí natáhnout.',
+      'Je to nejdelší cesta, jakou ukazováček dělá.',
+      'Po úhozu nahmatej hrbolek na F.',
+    ],
+  }, longSteps),
+
+  L('L17B', 'Dolní řada', 'N: krok dovnitř zprava', ['n'], 100, {
+    lead: 'N bere pravý ukazováček krokem doleva dolů. Zrcadlo k B. N je v češtině velmi časté, takže tenhle hmat budeš potřebovat pořád.',
+    points: [
+      'N je nalevo od M.',
+      'B a N jsou vedle sebe, nepleť si je.',
+      'Po úhozu se prst vrací na J.',
+    ],
+  }, longSteps),
+
+  L('L18', 'Dolní řada', 'Y: levý malíček dolů', ['y'], 105, {
+    lead: 'Levý malíček sjede z A dolů na Y. Na české klávesnici je Y dole vlevo, tam kde bývá anglické Z. Pozor, s Z se plete i lidem, kteří píší dávno.',
+    points: [
+      'Y je pod A.',
+      'Y je dole, Z je nahoře. Na anglické klávesnici je to naopak.',
+      'Malíček je slabý, ale pletení Y a Z se odnaučuje hůř než pomalý úhoz.',
+    ],
+  }, longSteps),
+
+  L('L18B', 'Dolní řada', 'Pomlčka a celá abeceda', ['-'], 105, {
+    lead: 'Poslední klávesa dolní řady je pomlčka a píše ji pravý malíček. Tím umíš celou abecedu, všechna písmena bez háčků a čárek.',
+    points: [
+      'Pomlčka je napravo od tečky.',
+      'Spojovník se píše bez mezer: modro-bílý.',
+      'Od téhle chvíle jde napsat skoro každé české slovo bez diakritiky.',
+    ],
+  }, punctSteps.map((st) => (st.kind === 'words' || st.kind === 'mixed' ? { ...st, punct: ' -' } : st))),
+
+  L('L18R', 'Dolní řada', 'Opakování celé abecedy', [], 105, {
+    lead: 'Umíš všechna písmena. Dnes si to celé projdeme dohromady, se slovy i větami.',
+    points: [
+      'Piš plynule a nezastavuj se po každém slově.',
+      'Když uděláš chybu, nech ji být a piš dál.',
+      'Tohle je dobré místo zkusit si psát úplně poslepu.',
+    ],
+  }, bigReviewSteps),
 
   /* ------------------------------------------------- velká písmena */
   L('L19', 'Velká písmena', 'Velká písmena pravým Shiftem', [
@@ -337,56 +473,104 @@ export const LESSONS = [
   ]),
 
   /* ----------------------------------------------------- diakritika */
-  L('L21', 'Háčky a čárky', 'Ě a Š na číselné řadě', ['ě', 'š'], 105, {
-    lead: 'Písmena s háčky a čárkami mají na české klávesnici vlastní klávesy v horní číselné řadě. Ě píše levý prsteníček, Š levý prostředníček. Prst musí až úplně nahoru.',
+  L('L21', 'Háčky a čárky', 'Š: levý prostředníček na číselnou řadu', ['š'], 105, {
+    lead: 'Písmena s háčky a čárkami mají na české klávesnici vlastní klávesy v číselné řadě, tedy ještě nad horní řadou. Začneme levým prostředníčkem, který jde z D přes E až na Š.',
     points: [
       'Číselná řada je nejvýš, prst se natáhne přes horní řadu.',
       'Ruku nechej na místě, natahuje se jen prst.',
       'Po úhozu vždycky zpátky do základní polohy.',
     ],
-  }, standardSteps),
+  }, longSteps),
 
-  L('L22', 'Háčky a čárky', 'Č a Ř', ['č', 'ř'], 110, {
-    lead: 'Č i Ř píše levý ukazováček. Č je nad čtyřkou, Ř nad pětkou, hned vedle sebe. Ř je nejtypičtější české písmeno, cizinci ho neumí.',
+  L('L21B', 'Háčky a čárky', 'Á: pravý prostředníček nahoru', ['á'], 105, {
+    lead: 'Pravý prostředníček jde z K přes I až na Á. Je to ten samý pohyb, jaký včera dělal levý prostředníček se Š, jen na druhé straně.',
     points: [
-      'Obě klávesy bere levý ukazováček.',
+      'Á je nad I.',
+      'Á je nejčastější dlouhá samohláska v češtině, budeš ji psát pořád.',
+      'Dlouhé samohlásky si vyslov nahlas, pomůže ti to.',
+    ],
+  }, longSteps),
+
+  L('L22', 'Háčky a čárky', 'Č: levý ukazováček nahoru', ['č'], 110, {
+    lead: 'Levý ukazováček jde z F přes R až na Č. Je to nejvyšší klávesa, na kterou zatím sahal.',
+    points: [
+      'Č je nad R.',
       'Natáhni prst nahoru, ne celou ruku.',
-      'Ř a Č jsou vedle sebe, nepleť si je.',
+      'Ostatní prsty zůstávají ležet.',
     ],
-  }, standardSteps),
+  }, longSteps),
 
-  L('L23', 'Háčky a čárky', 'Ž a Ý', ['ž', 'ý'], 110, {
-    lead: 'Ž a Ý bere pravý ukazováček. Jsou hned napravo od Ř, nad šestkou a sedmičkou.',
+  L('L22B', 'Háčky a čárky', 'Ý: pravý ukazováček nahoru', ['ý'], 110, {
+    lead: 'Pravý ukazováček jde z J přes U na Ý. Zrcadlo k Č. Pozor, Ý se píše jinde než Y z dolní řady, ale vyslovuje se skoro stejně.',
     points: [
-      'Ž a Ý patří pravému ukazováčku.',
-      'Zkontroluj, že levá ruka zůstala v základní poloze.',
-      'Zvládneš to, jen pomalu.',
+      'Ý je nad U.',
+      'Krátké Y je dole vlevo, dlouhé Ý nahoře vpravo.',
+      'Po úhozu se prst vrací na hrbolek.',
     ],
-  }, standardSteps),
+  }, longSteps),
 
-  L('L24', 'Háčky a čárky', 'Á a Í', ['á', 'í'], 115, {
-    lead: 'Á píše pravý prostředníček a Í pravý prsteníček. Jsou to nejčastější dlouhé samohlásky v češtině, budeš je psát pořád.',
+  L('L22R', 'Háčky a čárky', 'Opakování: Š, Á, Č a Ý', [], 110, {
+    lead: 'Dnes nic nového. Číselná řada je nejdál ze všech, tak si čtyři nová písmena usadíme, než přidáme další.',
     points: [
-      'Á nad osmičkou, Í nad devítkou.',
-      'Prostředníček a prsteníček nahoru.',
-      'Dlouhé samohlásky vyslov nahlas, pomůže ti to.',
+      'Prst jde nahoru a hned zpátky, ruka zůstává dole.',
+      'Když ztratíš základní polohu, nahmatej hrbolky na F a J.',
+      'Nespěchej, tahle řada je pomalejší i pro dospělé.',
     ],
-  }, standardSteps),
+  }, bigReviewSteps),
+
+  L('L23', 'Háčky a čárky', 'Ř: krok dovnitř zleva', ['ř'], 110, {
+    lead: 'Ř leží napravo od Č a bere ho taky levý ukazováček, nataženým krokem dovnitř. Je to nejtypičtější české písmeno, cizinci ho neumí vyslovit ani napsat.',
+    points: [
+      'Ř je nad T, obě klávesy bere levý ukazováček.',
+      'Je to natažení šikmo nahoru a doprava.',
+      'Dej pozor, aby se za prstem neposunula celá ruka.',
+    ],
+  }, longSteps),
+
+  L('L23B', 'Háčky a čárky', 'Ž: krok dovnitř zprava', ['ž'], 110, {
+    lead: 'Ž bere pravý ukazováček krokem doleva nahoru. Zrcadlo k Ř, stejně jako je Z zrcadlem k T v horní řadě.',
+    points: [
+      'Ž je nad Z.',
+      'Ř a Ž leží vedle sebe, každé ale patří jiné ruce.',
+      'Po úhozu nahmatej hrbolek na J.',
+    ],
+  }, longSteps),
+
+  L('L24', 'Háčky a čárky', 'Ě: levý prsteníček nahoru', ['ě'], 115, {
+    lead: 'Levý prsteníček jde ze S přes W až na Ě. Ě stojí jen uvnitř slov, nikdy na začátku.',
+    points: [
+      'Ě je nad W.',
+      'Prsteníček je líný, dej mu čas.',
+      'Ě se píše po souhlásce: dě, tě, ně, bě, pě, vě, mě.',
+    ],
+  }, longSteps),
+
+  L('L24B', 'Háčky a čárky', 'Í: pravý prsteníček nahoru', ['í'], 115, {
+    lead: 'Pravý prsteníček jde z L přes O na Í. Zrcadlo k Ě a zároveň jedno z nejčastějších písmen v češtině.',
+    points: [
+      'Í je nad O.',
+      'Krátké I je v horní řadě, dlouhé Í v číselné.',
+      'Tohle písmeno budeš psát každou chvíli, vyplatí se ho mít jistě.',
+    ],
+  }, longSteps),
 
   L('L25', 'Háčky a čárky', 'É a celá číselná řada', ['é'], 120, {
     lead: 'Poslední písmeno číselné řady je É a píše ho pravý malíček. Tím umíš celou číselnou řadu a s ní všechna malá písmena s háčky a čárkami.',
     points: [
-      'É je nad nulou, píše ho pravý malíček.',
+      'É je nad P, píše ho pravý malíček.',
       'Shift nad těmito klávesami dá číslici, ne velké písmeno. Velké Č nebo Ř se dělá jinak, to přijde za dvě lekce.',
       'Teď se soustřeď na to, aby prst šel nahoru sám a ruka zůstala dole.',
     ],
-  }, [
-    warmup,
-    { kind: 'letters', label: 'Nové písmeno', lines: 2, phase: 0 },
-    { kind: 'reach', label: 'Zpátky domů', lines: 2 },
-    { kind: 'words', label: 'Slova', lines: 4 },
-    { kind: 'sentences', label: 'Věty', lines: 3 },
-  ]),
+  }, longSteps),
+
+  L('L25R', 'Háčky a čárky', 'Opakování s háčky a čárkami', [], 120, {
+    lead: 'Umíš všechna česká písmena. Dnes si je projdeme dohromady, ve slovech i větách.',
+    points: [
+      'Diakritika je nejdál od základní polohy, proto se na ní ztrácí nejvíc rychlosti.',
+      'Piš plynule, nezastavuj se před každým háčkem.',
+      'Když se ti řádek nepovede, nic se neděje, napíšeš ho znovu.',
+    ],
+  }, bigReviewSteps),
 
   /* --------------------------------------------- znaménka a čísla */
   L('L26', 'Znaménka a čísla', 'Otazník, vykřičník, dvojtečka', ['?', '!', ':', '"'], 120, {

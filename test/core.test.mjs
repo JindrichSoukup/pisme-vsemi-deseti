@@ -323,17 +323,26 @@ test('první lekce začíná opakováním jednoho písmene, pak střídá ruce',
 });
 
 test('lekce s natažením prstu cvičí návrat do základní polohy', () => {
-  const cases = { L05: ['fgf', 'jhj'], L08: ['frf', 'juj'], L15: ['dcd', 'k,k'], L21: ['sěs', 'dšd'] };
-  for (const [id, [a, b]] of Object.entries(cases)) {
+  // dvojice na obou rukou najednou
+  const pair = lessonById('L05');
+  const pairLines = buildStep(pair, pair.steps.find((s) => s.kind === 'reach'),
+    { allowed: allowedCharsUpTo(LESSONS.indexOf(pair)), keyStats: {}, uppercase: false }, 1).lines;
+  assert.ok(pairLines[0].startsWith('fgf '), 'L05: ' + pairLines[0]);
+  assert.ok(!pairLines[0].includes('jhj'), 'L05: první řádek cvičí jen jednu ruku');
+  assert.ok(pairLines[1].startsWith('jhj '), 'L05: ' + pairLines[1]);
+  assert.ok(pairLines[2].includes('fgf') && pairLines[2].includes('jhj'), 'L05: obě ruce v jednom řádku');
+
+  // lekce s jedinou novou klávesou: vlastní sevření a hned za ním druhá ruka
+  for (const [id, own] of Object.entries({ L08: 'frf', L08B: 'juj', L16: 'sxs', L21: 'dšd' })) {
     const lesson = lessonById(id);
     const i = LESSONS.indexOf(lesson);
     const step = lesson.steps.find((s) => s.kind === 'reach');
     assert.ok(step, id + ': chybí krok se sevřením mezi domovské klávesy');
     const lines = buildStep(lesson, step, { allowed: allowedCharsUpTo(i), keyStats: {}, uppercase: false }, 1).lines;
-    assert.ok(lines[0].startsWith(a + ' '), id + ': ' + lines[0]);
-    assert.ok(!lines[0].includes(b), id + ': první řádek cvičí jen jednu ruku');
-    assert.ok(lines[1].startsWith(b + ' '), id + ': ' + lines[1]);
-    assert.ok(lines[2].includes(a) && lines[2].includes(b), id + ': obě ruce v jednom řádku');
+    assert.ok(lines[0].startsWith(own + ' '), id + ': ' + lines[0]);
+    assert.ok(lines[1].includes(own), id + ': druhý řádek zapomněl na novou klávesu');
+    const other = lines[1].split(' ').find((g) => g !== own && g.length === 3);
+    assert.ok(other, id + ': druhá ruka se do sevření nedostala: ' + lines[1]);
   }
 
   // lekce, jejíž písmena leží přímo v základní řadě, tenhle krok nepotřebuje
@@ -790,12 +799,7 @@ test('první řádek rozcvičky je základní řada a za ní poslední naučená
 
 test('dvojice písmen v lekci patří stejnému prstu na obou rukou', async () => {
   const { keyForChar } = await import('../web/js/keyboard.js');
-  // Číselná řada s diakritikou tomu uniká: ěščřžýáíé leží vedle sebe a páruje
-  // se po sousedech, symetrii tam rozložení klávesnice neumožňuje.
-  const numberRow = new Set(['L21', 'L22', 'L23', 'L24', 'L25']);
-
   for (const lesson of LESSONS) {
-    if (numberRow.has(lesson.id)) continue;
     const keys = (lesson.newKeys || []).filter((k) => k.length === 1);
     if (keys.length !== 2) continue;
 
@@ -864,4 +868,68 @@ test('lekce na W a Q leží hned za horní řadou', () => {
   const index = LESSONS.findIndex((l) => l.id === 'L13B');
   assert.equal(LESSONS[index - 1].id, 'L13', 'má přijít po dokončené horní řadě');
   assert.equal(LESSONS[index + 1].block, 'Dolní řada', 'a hned před dolní řadou');
+});
+
+test('lekce se znaménkem ho procvičí i za slovy, ne jen samotné', () => {
+  for (const [id, mark] of Object.entries({ L15B: ',', L16B: '.', L18B: '-' })) {
+    const lesson = lessonById(id);
+    const step = lesson.steps.find((s) => s.kind === 'words');
+    const lines = buildStep(lesson, step, {
+      allowed: allowedCharsUpTo(LESSONS.indexOf(lesson)), keyStats: {}, layout: 'cs-qwertz',
+    }, 0).lines;
+    assert.ok(lines.join(' ').includes(mark), `${id}: znaménko ${mark} se ve slovech neobjevilo`);
+  }
+});
+
+test('opakovací lekce nepřidávají klávesy a jsou v každém bloku', () => {
+  const reviews = LESSONS.filter((l) => !(l.newKeys || []).length && !/anglick/i.test(l.title));
+  assert.ok(reviews.length >= 8, `opakovacích lekcí je jen ${reviews.length}`);
+
+  for (const block of ['Horní řada', 'Dolní řada', 'Háčky a čárky']) {
+    assert.ok(reviews.some((l) => l.block === block), `blok ${block} nemá opakovací lekci`);
+  }
+});
+
+/* --------------------------------------------------------------- rytmus */
+
+test('přechod mezi úhozy se zařadí podle toho, co se zrovna děje', async () => {
+  const { strokeClass } = await import('../web/js/stats.js');
+  const k = (char, line = 0) => ({ char, line, ok: true, latency: 100 });
+
+  assert.equal(strokeClass(null, k('f')), 'začátek řádku');
+  assert.equal(strokeClass(k('f', 0), k('j', 1)), 'začátek řádku', 'nový řádek se nepočítá jako přechod');
+  assert.equal(strokeClass(k('l'), k(' ')), 'konec slova');
+  assert.equal(strokeClass(k(' '), k('d')), 'začátek slova');
+  assert.equal(strokeClass(k('f'), k('r')), 'stejný prst', 'f i r bere levý ukazováček');
+  assert.equal(strokeClass(k('f'), k('d')), 'stejná ruka');
+  assert.equal(strokeClass(k('f'), k('j')), 'střídání rukou');
+  assert.equal(strokeClass(k('a'), k('Z')), 'velké písmeno');
+  assert.equal(strokeClass(k('a'), k('ď')), 'háček nebo čárka');
+});
+
+test('rytmus spočítá medián a zaváhání proti němu', async () => {
+  const { rhythmSummary } = await import('../web/js/stats.js');
+  const log = [
+    { char: 'd', line: 0, ok: true, latency: 0 },
+    { char: 'a', line: 0, ok: true, latency: 200 },
+    { char: 'l', line: 0, ok: true, latency: 200 },
+    { char: ' ', line: 0, ok: true, latency: 900 },  // zaváhání na konci slova
+    { char: 'k', line: 0, ok: true, latency: 800 },  // a další na začátku dalšího
+    { char: 'a', line: 0, ok: true, latency: 200 },
+  ];
+  const r = rhythmSummary(log);
+  assert.equal(r.strokes, 5, 'první úhoz nemá odstup, do počtu nepatří');
+  assert.equal(r.median, 200, 'medián drží běžné tempo, ne ty dvě pauzy');
+  assert.equal(r.classes['konec slova'].strokes, 1);
+  assert.equal(r.classes['konec slova'].slow, 1, 'pauza před mezerou je zaváhání');
+  assert.equal(r.classes['začátek slova'].strokes, 1);
+  assert.equal(r.classes['začátek slova'].slow, 1, 'pauza po mezeře taky');
+  assert.ok(r.classes['stejná ruka'] || r.classes['střídání rukou'], 'chybí přechod uvnitř slova');
+});
+
+test('rytmus se nepočítá z ničeho a nepadá na tom', async () => {
+  const { rhythmSummary } = await import('../web/js/stats.js');
+  assert.equal(rhythmSummary([]), null);
+  assert.equal(rhythmSummary(null), null);
+  assert.equal(rhythmSummary([{ char: 'f', line: 0, ok: true, latency: 0 }]), null);
 });

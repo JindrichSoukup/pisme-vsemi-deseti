@@ -2,9 +2,14 @@
 # takže nepatří nikam ven. Vznikají znovu při prvním spuštění.
 data/
 
-# Podklady, které nejsou moje: naskenovaná učebnice a obrázek z cizí aplikace.
+# Podklady, které nejsou moje: naskenovaná učebnice, obrázek z cizí aplikace
+# a starý DOSový kurz, ze kterého jsem jen četl.
 *.pdf
+tmp/
 jungle-junior-jungle-junior-lesson.png
+
+# Syrové záznamy úhozů. Patří k datům dítěte, ne do repozitáře.
+*.jsonl
 
 # Dočasné soubory z atomického zápisu.
 *.tmp

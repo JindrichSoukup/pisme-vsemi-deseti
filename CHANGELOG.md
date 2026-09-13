@@ -4,6 +4,35 @@ Verze se značí podle [semver](https://semver.org): první číslo se zvedne p�
 velké změně, druhé při nové funkci, třetí při opravě. K téhle verzi patří
 i vydání na GitHubu se stejným popisem.
 
+## 1.2.0
+
+### Změny
+
+- **Osnova má 58 lekcí místo 39.** Písmena horní, dolní a číselné řady se teď
+  učí po jednom, ne po dvou naráz, a mezi ně jsou vložené opakovací lekce.
+  Vzorem byl DOSový kurz z roku 1990, který má na jednu klávesu skoro
+  čtyřnásobek nácviku. Rozdíl se tím zmenšil z čtyřnásobku na dvojnásobek,
+  aniž by se prodloužil den u klávesnice.
+- **Cvičení od dolní řady dál má čtyři řádky místo tří.** Dítě už v té době
+  píše rychleji, takže lekce zabere stejný čas, ale nácviku je o třetinu víc.
+- **Dvojice zůstává didaktickou jednotkou.** Lekce s levou klávesou je vždycky
+  následovaná lekcí s její zrcadlovou pravou, takže střídání rukou nezmizelo.
+- **Čárka, tečka a pomlčka se procvičí i za slovy**, ne jen samy o sobě.
+  Řádek pak vypadá jako `duben - lepidlo - lid -`, tak jak to dělaly staré
+  kurzy.
+- **Číselná řada je spárovaná symetricky**: Š a Á jsou prostředníčky, Č a Ý
+  ukazováčky, Ř a Ž jejich krok dovnitř, Ě a Í prsteníčky, É zůstává samo.
+  Dřív se párovala po sousedech, což jako jediné místo v osnově neumožňovalo
+  cvičit střídání rukou.
+
+### Opravy
+
+- Zamíchané skupinky vyšly naprázdno v lekci, jejíž nová klávesa nebyla
+  písmeno, tedy u čárky, tečky a pomlčky.
+- Sevření mezi domovské klávesy bylo u lekce s jedinou novou klávesou pořád
+  ten samý řádek. Teď druhý řádek přibírá i naposledy probrané sevření druhé
+  ruky, ať se návrat cvičí na obou rukou.
+
 ## 1.1.0
 
 ### Nové

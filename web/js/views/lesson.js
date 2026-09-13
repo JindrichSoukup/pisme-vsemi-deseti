@@ -7,7 +7,7 @@ import { createEngine } from '../engine.js';
 import { renderKeyboard, highlightChar, keyForChar, FINGERS } from '../keyboard.js';
 import { renderHands, highlightFinger, handOf } from '../hands.js';
 import {
-  computeResult, summarizeKeys, humanDuration, pct, recentSpeed, remainingWork,
+  computeResult, summarizeKeys, humanDuration, pct, recentSpeed, remainingWork, rhythmSummary,
 } from '../stats.js';
 import { api, saveResultSafe, saveStickerSafe } from '../api.js';
 import { maybeAward, stickerSvg, printStickers } from '../stickers.js';
@@ -408,6 +408,19 @@ async function finishLesson() {
         typed: r.typed,
         errors: r.errors,
         durationMs: r.durationMs,
+      })),
+      // rytmus: kde padají pauzy, po druzích přechodu mezi úhozy
+      rhythm: rhythmSummary(total.keyLog, app.profile.settings.layout),
+      // Syrový záznam úhozů. Na obrazovce se nepoužívá, ukládá se stranou
+      // kvůli pozdějšímu rozboru: bez něj se nedá zpětně zjistit nic, co
+      // jsme dopředu nezapočítali.
+      strokes: session.collected.map((r) => ({
+        kind: r.kind,
+        chars: r.keyLog.map((k) => k.char).join(''),
+        typed: r.keyLog.map((k) => (k.ok ? '' : k.got || '?')).join('|'),
+        lat: r.keyLog.map((k) => Math.round(k.latency)),
+        ok: r.keyLog.map((k) => (k.ok ? 1 : 0)).join(''),
+        line: r.keyLog.map((k) => k.line).join(','),
       })),
       practice: !!lesson.practice,
       assignmentId: session.assignmentId,

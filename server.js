@@ -95,6 +95,7 @@ function emptyProfile(id, name) {
     },
     lessons: {},  // id lekce -> { stars, bestCpm, bestAccuracy, attempts[] }
     kindStats: {},// druh cvičení -> { runs, keystrokes, errors, durationMs, recent[] }
+    rhythm: {},   // rytmus po druzích přechodu mezi úhozy
     keyStats: {}, // znak -> { presses, errors, latencyEma }
     stickers: [], // { id, earnedAt, lessonId }
     days: {},     // 'YYYY-MM-DD' -> { seconds, keystrokes, errors }
@@ -183,11 +184,67 @@ function applySteps(profile, steps) {
   }
 }
 
+/**
+ * Rytmus psaní po druzích přechodu mezi úhozy. Klient pošle souhrn za lekci,
+ * tady se jen přičte k dosavadnímu, ať se dá sledovat, kde padají pauzy.
+ */
+function applyRhythm(profile, rhythm) {
+  if (!rhythm || !rhythm.classes) return;
+  // starší profil má rhythm prázdný objekt, nový ho nemá vůbec
+  const cur = profile.rhythm && profile.rhythm.classes
+    ? profile.rhythm
+    : { strokes: 0, runs: 0, medians: [], classes: {} };
+
+  cur.runs += 1;
+  cur.strokes += num(rhythm.strokes);
+  cur.medians = (cur.medians || []).concat(num(rhythm.median)).slice(-50);
+
+  for (const [name, s] of Object.entries(rhythm.classes)) {
+    const key = String(name).slice(0, 24);
+    const c = cur.classes[key] || { strokes: 0, sumMs: 0, slow: 0, errors: 0 };
+    c.strokes += num(s.strokes);
+    c.sumMs += num(s.sumMs);
+    c.slow += num(s.slow);
+    c.errors += num(s.errors);
+    cur.classes[key] = c;
+  }
+  profile.rhythm = cur;
+}
+
+/**
+ * Syrový záznam úhozů do vlastního souboru vedle profilu.
+ *
+ * Do profilu nepatří: rostl by donekonečna a přepisuje se celý při každém
+ * uložení. Tady se jen přidává řádek, takže se dá kdykoliv rozebrat, i na
+ * něco, co dneska ještě neměříme.
+ */
+async function appendStrokes(profile, r) {
+  if (!Array.isArray(r.strokes) || !r.strokes.length) return;
+  const file = path.join(DATA_DIR, profile.id + '.keys.jsonl');
+  const at = new Date().toISOString();
+  const lines = r.strokes
+    .filter((s) => s && typeof s.chars === 'string' && s.chars.length)
+    .map((s, i) => JSON.stringify({
+      at,
+      lesson: String(r.lessonId || '').slice(0, 32),
+      step: i,
+      kind: String(s.kind || '').slice(0, 24),
+      practice: !!r.practice,
+      chars: s.chars.slice(0, 4000),
+      typed: String(s.typed || '').slice(0, 4000),
+      lat: Array.isArray(s.lat) ? s.lat.slice(0, 4000).map((x) => Math.round(num(x))) : [],
+      ok: String(s.ok || '').slice(0, 4000),
+      line: String(s.line || '').slice(0, 8000),
+    }));
+  if (lines.length) await fsp.appendFile(file, lines.join('\n') + '\n', 'utf8');
+}
+
 function applyResult(profile, r) {
   const lessonId = String(r.lessonId || '').slice(0, 32);
   if (!lessonId) throw new Error('chybí lessonId');
 
   applySteps(profile, r.steps);
+  applyRhythm(profile, r.rhythm);
 
   // Cvičení navíc se do osnovy nezapisuje. Nemá hvězdičky ani rekord,
   // jen se odškrtne jako hotové a započítá do dne a do druhů cvičení.
@@ -405,6 +462,8 @@ async function handleApi(req, res, url) {
       const body = await readBody(req);
       const attempt = applyResult(profile, body);
       await writeProfile(profile);
+      // syrový záznam jde stranou, výsledek se kvůli němu nesmí zdržet
+      appendStrokes(profile, body).catch((err) => log('záznam úhozů selhal:', err.message));
       return sendJson(res, 200, { attempt, profile });
     }
 

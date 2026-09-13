@@ -25,7 +25,7 @@ Když je port obsazený, dá se zvolit jiný: `node server.js --port 7332`.
 
 ## Co program umí
 
-- **39 lekcí** v pořadí, jaké se u nás používá: nejdřív `f` a `j`, pak zbytek
+- **58 lekcí** v pořadí, jaké se u nás používá: nejdřív `f` a `j`, pak zbytek
   základní řady, horní řada, dolní řada, velká písmena včetně střídání obou
   Shiftů, oprava chyb, háčky a čárky, znaménka a číslice. Na konci jsou
   prstolamy a tematická cvičení pro zábavu.
@@ -154,7 +154,10 @@ Program to tak i učí, v lekci 28.
 
 ## Data a zálohování
 
-Každý profil je jeden soubor JSON ve složce **`data`**. Jinou složku lze
+Každý profil je jeden soubor JSON ve složce **`data`**. Vedle něj leží
+soubor `<profil>.keys.jsonl`, kam se přidává syrový záznam úhozů: co se psalo,
+jak dlouho trvalo a co bylo špatně. Na obrazovce se nepoužívá, je to podklad
+pro pozdější rozbor. Jinou složku lze
 zvolit proměnnou prostředí `PSANI_DATA`, což se hodí při zkoušení. Zálohu uděláš tím,
 že tu složku zkopíruješ. Smazáním souboru se smaže profil i s historií.
 

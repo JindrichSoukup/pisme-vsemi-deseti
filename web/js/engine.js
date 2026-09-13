@@ -241,7 +241,11 @@ export function createEngine(root, options = {}) {
 
     state.keyLog.push({
       char: expected,
+      // co dítě opravdu stisklo, když se spletlo. Z toho se dá zpětně zjistit,
+      // jestli šlo o sousední klávesu, o záměnu rukou nebo o něco jiného.
+      got: ok ? null : ch,
       ok,
+      line: state.line,
       latency: state.keyLog.length ? now - (state.keyLog[state.keyLog.length - 1].ts || now) : 0,
       ts: now,
     });
@@ -325,7 +329,7 @@ export function createEngine(root, options = {}) {
       typed: state.typed,
       errors: state.errors,
       durationMs: Math.max(1, Math.round(state.elapsed)),
-      keyLog: state.keyLog.map((k) => ({ char: k.char, ok: k.ok, latency: k.latency })),
+      keyLog: state.keyLog.map((k) => ({ char: k.char, got: k.got, ok: k.ok, line: k.line, latency: k.latency })),
     };
     if (options.onFinish) options.onFinish(result);
   }
