@@ -933,3 +933,44 @@ test('rytmus se nepočítá z ničeho a nepadá na tom', async () => {
   assert.equal(rhythmSummary(null), null);
   assert.equal(rhythmSummary([{ char: 'f', line: 0, ok: true, latency: 0 }]), null);
 });
+
+/* ------------------------------------------- odemykání po změně osnovy */
+
+test('hotová lekce se nezamkne, ani když do osnovy přibude jiná před ní', () => {
+  // profil, který prošel prvních pár lekcí a pak i jednu vzdálenější:
+  // přesně to vznikne, když se osnova mezitím rozdělí na víc lekcí
+  const far = LESSONS[11];
+  const profile = {
+    lessons: {
+      [LESSONS[0].id]: { stars: 3, attempts: [{}] },
+      [LESSONS[6].id]: { stars: 3, attempts: [{}] },
+      [far.id]: { stars: 2, attempts: [{}] },
+    },
+  };
+
+  for (let i = 0; i <= 11; i++) {
+    assert.ok(isUnlocked(i, profile), `${LESSONS[i].id} se zamkla, i když dítě došlo dál`);
+  }
+  assert.ok(isUnlocked(12, profile), 'jedna lekce za tou nejvzdálenější má být otevřená');
+  assert.ok(!isUnlocked(13, profile), 'dvě lekce dopředu se přeskakovat nedají');
+});
+
+test('bez jediného záznamu je otevřená jen první lekce', () => {
+  const profile = { lessons: {} };
+  assert.ok(isUnlocked(0, profile));
+  assert.ok(!isUnlocked(1, profile), 'druhá lekce se otevře až po první');
+});
+
+test('nezvládnutá lekce dál neodemyká, dokud nepřijdou tři pokusy', async () => {
+  const { reachedIndex } = await import('../web/js/curriculum.js');
+  const jenPokus = { lessons: { [LESSONS[3].id]: { stars: 0, attempts: [{}, {}] } } };
+  assert.equal(reachedIndex(jenPokus), -1, 'dva pokusy bez hvězdičky ještě nestačí');
+
+  const triPokusy = { lessons: { [LESSONS[3].id]: { stars: 0, attempts: [{}, {}, {}] } } };
+  assert.equal(reachedIndex(triPokusy), 3, 'po třech pokusech se jde dál i bez hvězdičky');
+});
+
+test('žádné dvě lekce nemají stejné id', () => {
+  const ids = LESSONS.map((l) => l.id);
+  assert.equal(new Set(ids).size, ids.length, 'id lekce je klíč k pokroku dítěte, nesmí se opakovat');
+});

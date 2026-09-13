@@ -5,6 +5,20 @@
  *
  * Každá lekce má výklad (intro) a několik kroků (steps). Konkrétní text
  * kroků se skládá až v generator.js, aby se neopakoval pořád stejný.
+ *
+ * ---------------------------------------------------------------------
+ * Pravidla pro změny osnovy. Pokrok dítěte je uložený podle id lekce, ne
+ * podle pořadí, takže osnova se měnit smí, ale podle těchhle pravidel:
+ *
+ *   1. Id lekce se nikdy nemění a nikdy se nepoužije podruhé. Kdo má
+ *      zapsané L09, musí u L09 zůstat tomu, co se tam učilo.
+ *   2. Když se lekce dělí, jedna půlka si id nechá a druhá dostane nové
+ *      s písmenem na konci: L07 a L07B. Dítě tak nepřijde o hotovou práci.
+ *   3. Lekce se nemaže. Když je nežádoucí, přesune se na konec osnovy nebo
+ *      se změní její obsah, ale záznam v profilu musí mít pořád kam sednout.
+ *   4. Odemykání nesmí záviset na sousedství v seznamu, protože sousedství
+ *      se změnou osnovy mění. Viz isUnlocked a reachedIndex níž.
+ * ---------------------------------------------------------------------
  */
 
 const L = (id, block, title, newKeys, targetCpm, intro, steps) => ({
@@ -788,12 +802,38 @@ export function lessonIndex(id) {
  * Je lekce odemčená? Odemyká se první hvězdičkou v předchozí lekci.
  * Aby se dítě nezaseklo, stačí i tři pokusy o předchozí lekci.
  */
+/** Zvládnutá lekce: aspoň hvězdička, nebo tři pokusy, ať se nikdo nezasekne. */
+function passed(rec) {
+  return !!rec && (rec.stars > 0 || (rec.attempts || []).length >= 3);
+}
+
+/**
+ * Kam až se dítě dostalo, tedy pořadí nejvzdálenější zvládnuté lekce.
+ *
+ * Počítá se přes celou osnovu, ne od začátku po první mezeru. Osnova se
+ * totiž mění: lekce přibývají a dělí se, takže hotová lekce se posune na
+ * jiné místo a mezera vznikne tam, kde dřív žádná nebyla.
+ */
+export function reachedIndex(profile) {
+  let best = -1;
+  for (let i = 0; i < LESSONS.length; i++) {
+    if (passed((profile.lessons || {})[LESSONS[i].id])) best = i;
+  }
+  return best;
+}
+
+/**
+ * Odemčená je každá lekce až po tu nejvzdálenější zvládnutou, a k tomu jedna
+ * další. Lekce, kterou dítě už někdy dělalo, se nezamyká nikdy.
+ *
+ * Dřív se koukalo jen na lekci bezprostředně předchozí. Jenže když se do
+ * osnovy vloží nová lekce, předchozí je najednou ta nová a bez záznamu, takže
+ * se zamkla i lekce dávno hotová. Tenhle způsob přežije i další změny osnovy.
+ */
 export function isUnlocked(index, profile) {
   if (index <= 0) return true;
-  const prev = LESSONS[index - 1];
-  const rec = (profile.lessons || {})[prev.id];
-  if (!rec) return false;
-  return rec.stars > 0 || (rec.attempts || []).length >= 3;
+  if ((profile.lessons || {})[LESSONS[index].id]) return true;
+  return index <= reachedIndex(profile) + 1;
 }
 
 /**

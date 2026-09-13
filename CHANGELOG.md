@@ -27,6 +27,12 @@ i vydání na GitHubu se stejným popisem.
 
 ### Opravy
 
+- **Změna osnovy zamykala hotové lekce.** Odemykání se dívalo jen na lekci
+  bezprostředně předcházející, takže po vložení nové lekce se zamklo i to, co
+  měl uživatel dávno hotové, a naopak šlo přeskočit dopředu. Teď je odemčeno
+  všechno až po nejvzdálenější zvládnutou lekci a k tomu jedna další, a lekce,
+  kterou už někdo dělal, se nezamyká nikdy. Pravidla pro další změny osnovy
+  jsou sepsaná v hlavičce curriculum.js.
 - Zamíchané skupinky vyšly naprázdno v lekci, jejíž nová klávesa nebyla
   písmeno, tedy u čárky, tečky a pomlčky.
 - Sevření mezi domovské klávesy bylo u lekce s jedinou novou klávesou pořád
