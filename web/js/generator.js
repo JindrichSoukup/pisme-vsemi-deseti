@@ -202,6 +202,130 @@ function buildLetters(newKeys, lines, allowed, phase = 0, offset = 0) {
 /** Domovská klávesa každého prstu. Odsud vyráží a sem se vrací. */
 const HOME_OF = { lp: 'a', lr: 's', lm: 'd', li: 'f', ri: 'j', rm: 'k', rr: 'l', rp: 'ů' };
 
+/* ------------------------------------------------ vzory, které se opakují */
+
+const LEFT_FINGERS = ['lp', 'lr', 'lm', 'li'];
+const RIGHT_FINGERS = ['ri', 'rm', 'rr', 'rp'];
+
+/**
+ * Známé klávesy jedné řady zleva doprava, zvlášť pro levou a pravou ruku.
+ * Prst, který v té řadě zatím nic nezná, dostane svou domovskou klávesu,
+ * takže vzor má vždycky plnou délku a nová klávesa v něm sedí na svém místě:
+ * po lekci s E vznikne asef jklů, ne jen samotné e.
+ */
+function rowHalves(row, allowed, layout) {
+  const byFinger = {};
+  for (const c of allowed) {
+    if (c === ' ' || c !== c.toLowerCase() || !/[\p{L},.\-]/u.test(c)) continue;
+    const info = keyForChar(c, layout);
+    if (!info || info.dead || info.shift || info.row !== row) continue;
+    (byFinger[info.finger] = byFinger[info.finger] || []).push(info.col === undefined ? [99, c] : [info.col, c]);
+  }
+  const half = (fingers) => fingers.flatMap((f) => {
+    const keys = (byFinger[f] || []).sort((a, b) => a[0] - b[0]).map(([, c]) => c);
+    if (keys.length) return keys;
+    return allowed.has(HOME_OF[f]) ? [HOME_OF[f]] : [];
+  });
+  return { left: half(LEFT_FINGERS), right: half(RIGHT_FINGERS) };
+}
+
+/**
+ * Vzory z kláves, jako stupnice na klavír. Tři obměny, každá pořád dokola:
+ *
+ *   asdf jklů ůlkj fdsa    tam a zpátky
+ *   adsf jlků ůklj fsda    ob jednu klávesu
+ *   adjl ůkfs              ruce se střídají po dvou
+ *
+ * Vzor se opakuje, takže ho dítě po prvním kole nečte, ale píše z paměti.
+ * To je jiná dovednost než hledání kláves v náhodném textu: plynulý pohyb
+ * prstů v pevném pořadí. Řada se bere podle klávesy, která je nová.
+ */
+function buildScales(focusKeys, allowed, lines, layout = 'cs-qwertz') {
+  const focus = focusKeys
+    .map((k) => keyForChar(String(k).toLowerCase(), layout))
+    .find((info) => info && !info.dead && !info.shift);
+  const { left, right } = rowHalves(focus ? focus.row : 2, allowed, layout);
+  if (left.length < 2 || right.length < 2) return null;
+
+  const rev = (a) => a.slice().reverse();
+  const odd = (a) => a.filter((_, i) => i % 2 === 0);
+  const even = (a) => a.filter((_, i) => i % 2 === 1);
+  const skip = (a) => odd(a).concat(even(a));
+  const j = (a) => a.join('');
+
+  const patterns = [
+    [j(left), j(right), j(rev(right)), j(rev(left))].join(' '),
+    [j(skip(left)), j(skip(right)), j(skip(rev(right))), j(skip(rev(left)))].join(' '),
+    [j(odd(left)) + j(odd(right)), j(rev(even(right))) + j(rev(even(left)))].join(' '),
+  ];
+  const out = [];
+  for (let i = 0; i < lines; i++) out.push(fillRow(patterns[i % patterns.length]));
+  return out;
+}
+
+/**
+ * Krátké skupinky slov, každá pořád dokola: sklad kůl, jak lak sak sad.
+ *
+ * Střídají se dva druhy. Rodina slov, která se liší jen prvním písmenem,
+ * cvičí jeden pohyb s malou změnou na začátku. Volná skupinka dlouhého
+ * a krátkého slova cvičí plynulý přechod přes mezerník. Slovo, které se
+ * opakuje, se po prvním kole nemusí číst, takže se nepíše po písmenech.
+ */
+function buildWordPatterns(focusKeys, allowed, lines, opts = {}) {
+  const pool = CONTENT.words.filter((w) => w.length >= 2 && fits(w, allowed));
+  if (pool.length < 4) return null;
+  const focus = focusKeys.filter((k) => k.length === 1);
+  const hasFocus = (w) => [...w].some((c) => focus.includes(c));
+
+  const families = new Map();
+  for (const w of pool) {
+    if (w.length < 3) continue;
+    const tail = w.slice(1);
+    if (!families.has(tail)) families.set(tail, []);
+    families.get(tail).push(w);
+  }
+  const rhymes = shuffle([...families.values()].filter((f) => f.length >= 2))
+    .sort((a, b) => Number(b.some(hasFocus)) - Number(a.some(hasFocus)));
+
+  const groups = [];
+  const seen = new Set();
+  const add = (words) => {
+    const g = words.map((w) => w + (opts.punct || '')).join(' ');
+    if (words.length >= 2 && !seen.has(g)) {
+      seen.add(g);
+      groups.push(g);
+    }
+  };
+
+  let r = 0;
+  for (let round = 0; groups.length < lines && round < lines * 20; round++) {
+    if (round % 2 === 0 && r < rhymes.length) {
+      // rodina rýmů, a když je krátká, přibere se k ní další
+      const words = shuffle(rhymes[r++]).slice(0, 4);
+      while (words.join(' ').length < 10 && words.length < 4 && r < rhymes.length) {
+        words.push(...shuffle(rhymes[r++]).slice(0, 4 - words.length));
+      }
+      add(words);
+    } else {
+      // dlouhé slovo s novým písmenem a k němu jedno nebo dvě krátké
+      const withFocus = pool.filter(hasFocus);
+      const first = pick(withFocus.length ? withFocus : pool);
+      const words = [first];
+      for (const w of shuffle(pool)) {
+        if (words.length >= 3) break;
+        if (words.includes(w) || words.join(' ').length + 1 + w.length > 16) continue;
+        words.push(w);
+      }
+      add(words);
+    }
+  }
+  if (!groups.length) return null;
+
+  const out = [];
+  for (let i = 0; i < lines; i++) out.push(fillRow(groups[i % groups.length], LINE_WIDTH));
+  return out;
+}
+
 /** Naposledy probrané sevření druhé ruky, nebo nic. */
 function lastReachOfOtherHand(key, allowed, layout) {
   const mine = keyForChar(key, layout);
@@ -782,6 +906,20 @@ export function buildStep(lesson, step, ctx, stepIndex = 0) {
     case 'twisters': {
       const hard = buildTwisters(allowed, lines, layout, step.mode || 'words');
       return { label: step.label, lines: hard || buildWords(newKeys, allowed, lines, { keyStats }) };
+    }
+
+    // Lekce se vzory nemá vlastní nová písmena, jen ta z lekce před ní.
+    // Proto se klávesy berou z focusKeys, když je lekce má.
+    case 'scales': {
+      const focus = lesson.focusKeys || newKeys;
+      const scales = buildScales(focus, allowed, lines, layout);
+      return { label: step.label, lines: scales || buildLetters(focus, lines, allowed, 1, stepIndex) };
+    }
+
+    case 'wordpatterns': {
+      const focus = lesson.focusKeys || newKeys;
+      const patterns = buildWordPatterns(focus, allowed, lines, { punct: step.punct });
+      return { label: step.label, lines: patterns || buildWords(focus, allowed, lines, { keyStats, punct: step.punct }) };
     }
 
     case 'warmup': {

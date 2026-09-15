@@ -8,6 +8,11 @@ i vydání na GitHubu se stejným popisem.
 
 ### Změny
 
+- **Lekce s novým písmenem se dělí na dvě, osnova má 90 lekcí.** Od lekce
+  s A a Ů dál má první část nácvik a slova, druhá část vzory z kláves
+  (`asdf jklů ůlkj fdsa`, `adsf jlků ůklj fsda`, `adjl ůkfs`), skupinky slov
+  dokola (`jak lak sak sad`) a na konci procvičení. Slova a procvičení byla
+  v jedné lekci do věty totéž a lekce s A a Ů trvala dítěti 31 minut.
 - **Osnova má 58 lekcí místo 39.** Písmena horní, dolní a číselné řady se teď
   učí po jednom, ne po dvou naráz, a mezi ně jsou vložené opakovací lekce.
   Vzorem byl DOSový kurz z roku 1990, který má na jednu klávesu skoro

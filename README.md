@@ -25,7 +25,7 @@ Když je port obsazený, dá se zvolit jiný: `node server.js --port 7332`.
 
 ## Co program umí
 
-- **58 lekcí** v pořadí, jaké se u nás používá: nejdřív `f` a `j`, pak zbytek
+- **90 lekcí** v pořadí, jaké se u nás používá: nejdřív `f` a `j`, pak zbytek
   základní řady, horní řada, dolní řada, velká písmena včetně střídání obou
   Shiftů, oprava chyb, háčky a čárky, znaménka a číslice. Na konci jsou
   prstolamy a tematická cvičení pro zábavu.
@@ -51,6 +51,10 @@ Když je port obsazený, dá se zvolit jiný: `node server.js --port 7332`.
 - **Nácvik jde ve třech stupních**: jedno písmeno pořád dokola, pak pravidelné
   střídání rukou, pak zamíchané skupinky, do kterých se přimíchají i písmena
   z dřívějších lekcí. Teprve potom slova a věty.
+- **Každá lekce s novým písmenem má druhou část se vzory dokola.** Nejdřív
+  klávesy v pevném pořadí jako stupnice, `asdf jklů ůlkj fdsa`, pak krátké
+  skupinky slov, `jak lak sak sad`, každá několikrát za sebou. Opakovaný vzor
+  se po prvním kole nečte, ale píše z paměti.
 - **Skupinky se v prvním cvičení zkracují**: `fff fff ff ff f f`. Mezerník tak
   přichází čím dál častěji a prst se čím dál častěji vrací do základní polohy.
 - **Krok Zpátky domů** u každé klávesy mimo základní řadu sevře natažený úhoz

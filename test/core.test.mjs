@@ -128,8 +128,10 @@ test('lekce začínají u f a j a jdou po české metodice', () => {
   assert.deepEqual(LESSONS[0].newKeys, ['f', 'j']);
   assert.deepEqual(LESSONS[1].newKeys, ['d', 'k']);
   assert.deepEqual(LESSONS[2].newKeys, ['s', 'l']);
-  assert.deepEqual(LESSONS[3].newKeys, ['a', 'ů']);
-  assert.deepEqual(LESSONS[4].newKeys, ['g', 'h']);
+  // lekce se vzory mezi nimi nová písmena nepřidávají, pořadí se tedy čte bez nich
+  const taught = LESSONS.filter((l) => l.newKeys.length);
+  assert.deepEqual(taught[3].newKeys, ['a', 'ů']);
+  assert.deepEqual(taught[4].newKeys, ['g', 'h']);
 });
 
 test('každá lekce má český výklad a aspoň dva kroky', () => {
@@ -973,4 +975,63 @@ test('nezvládnutá lekce dál neodemyká, dokud nepřijdou tři pokusy', async 
 test('žádné dvě lekce nemají stejné id', () => {
   const ids = LESSONS.map((l) => l.id);
   assert.equal(new Set(ids).size, ids.length, 'id lekce je klíč k pokroku dítěte, nesmí se opakovat');
+});
+
+
+/* ------------------------------------------ lekce rozdělené na dvě části */
+
+test('lekce s novým písmenem má za sebou lekci se vzory', () => {
+  for (const [i, lesson] of LESSONS.entries()) {
+    if (!lesson.focusKeys) continue;
+    const before = LESSONS[i - 1];
+    assert.equal(lesson.id, before.id + 'P', `${lesson.id} nestojí hned za svou první částí`);
+    assert.deepEqual(lesson.focusKeys, before.newKeys);
+    assert.deepEqual(lesson.newKeys, [], 'druhá část nová písmena nepřidává');
+    assert.deepEqual(lesson.steps.map((s) => s.kind).slice(1, 3), ['scales', 'wordpatterns']);
+  }
+  assert.ok(LESSONS.some((l) => l.id === 'L04P'), 'lekce s A a Ů se má dělit');
+  assert.ok(LESSONS.some((l) => l.id === 'L05P'), 'lekce s G a H se má dělit');
+  assert.ok(!LESSONS.some((l) => l.id === 'L03P'), 'první tři lekce slova ještě nemají');
+});
+
+test('slova a procvičení nejsou v jedné lekci zároveň', () => {
+  for (const lesson of LESSONS) {
+    if (!lesson.newKeys.length && !lesson.focusKeys) continue;
+    if (!['Základní řada', 'Horní řada', 'Dolní řada', 'Háčky a čárky'].includes(lesson.block)) continue;
+    const kinds = lesson.steps.map((s) => s.kind);
+    assert.ok(!(kinds.includes('words') && kinds.includes('mixed')),
+      `${lesson.id}: slova i procvičení v jedné lekci, přitom je to skoro totéž`);
+  }
+});
+
+test('vzory z kláves po lekci s A a Ů odpovídají zadání', () => {
+  const lesson = lessonById('L04P');
+  const lines = buildStep(lesson, lesson.steps.find((s) => s.kind === 'scales'), {
+    allowed: allowedCharsUpTo(LESSONS.indexOf(lesson)), keyStats: {}, layout: 'cs-qwertz',
+  }, 0).lines;
+  assert.ok(lines[0].startsWith('asdf jklů ůlkj fdsa'), lines[0]);
+  assert.ok(lines[1].startsWith('adsf jlků ůklj fsda'), lines[1]);
+  assert.ok(lines[2].startsWith('adjl ůkfs'), lines[2]);
+});
+
+test('vzor z kláves u horní řady dosadí za chybějící klávesy domovské', () => {
+  const lesson = lessonById('L07P'); // umí jen E z horní řady
+  const first = buildStep(lesson, lesson.steps.find((s) => s.kind === 'scales'), {
+    allowed: allowedCharsUpTo(LESSONS.indexOf(lesson)), keyStats: {}, layout: 'cs-qwertz',
+  }, 0).lines[0];
+  assert.ok(first.startsWith('asef jklů ůlkj fesa'), first);
+});
+
+test('skupinky slov se na řádku opakují a slova znají jen probraná písmena', () => {
+  const lesson = lessonById('L04P');
+  const allowed = allowedCharsUpTo(LESSONS.indexOf(lesson));
+  const lines = buildStep(lesson, lesson.steps.find((s) => s.kind === 'wordpatterns'), {
+    allowed, keyStats: {}, layout: 'cs-qwertz',
+  }, 0).lines;
+  assert.equal(lines.length, 4);
+  for (const line of lines) {
+    for (const ch of line) assert.ok(ch === ' ' || allowed.has(ch), `znak ${ch} se ještě neučil`);
+    const words = line.split(' ');
+    assert.ok(words.length > new Set(words).size, `řádek se neopakuje: ${line}`);
+  }
 });

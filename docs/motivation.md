@@ -73,7 +73,7 @@ even though both groups got identical materials and identical time.
 This follows directly from that study and is probably the single biggest
 decision in the design of the screen.
 
-Fifty-eight lessons listed one under another are exactly the distant goal
+Ninety lessons listed one under another are exactly the distant goal
 Bandura and Schunk showed does not help. It also does two things at once: it
 shows today's work as a negligible fraction of the whole, and everything else
 as unfinished. The child would start every day by looking at a long list of

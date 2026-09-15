@@ -206,7 +206,10 @@ function lessonCard(lesson, profile) {
   const unlocked = isUnlocked(i, profile);
   const stars = rec ? rec.stars : 0;
   const keys = lesson.newKeys.filter((k) => k.length === 1 && k === k.toLowerCase());
-  const keysLabel = keys.length ? keys.join(' ') : (lesson.newKeys.length ? 'velká písmena' : 'opakování');
+  const focus = (lesson.focusKeys || []).filter((k) => k.length === 1);
+  const keysLabel = keys.length ? keys.join(' ')
+    : focus.length ? `${focus.join(' ')} · vzory`
+      : (lesson.newKeys.length ? 'velká písmena' : 'opakování');
 
   // blok se píše na kartu, protože pořadí už neodpovídá osnově
   return `<button class="lesson-card card ${unlocked ? '' : 'lesson-card--locked'} ${stars ? 'lesson-card--done' : ''}"

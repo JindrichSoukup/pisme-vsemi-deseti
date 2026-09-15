@@ -154,16 +154,17 @@ function buildCharMap(layoutId) {
   const rows = LAYOUTS[layoutId] || LAYOUTS['cs-qwertz'];
   const map = new Map();
   const byCode = new Map();
-  for (const row of rows) {
-    for (const [code, ch, shiftCh, finger, width] of row) {
+  // řada a pořadí v ní se hodí pro cvičení, která jdou po klávesnici zleva doprava
+  for (const [rowIndex, row] of rows.entries()) {
+    for (const [col, [code, ch, shiftCh, finger, width]] of row.entries()) {
       byCode.set(code, { code, char: ch, shiftChar: shiftCh, finger, width: width || 1 });
       if (code === 'Space') {
         map.set(' ', { code, finger: 'th', shift: false });
         continue;
       }
-      if (ch && ch.length === 1 && !map.has(ch)) map.set(ch, { code, finger, shift: false });
+      if (ch && ch.length === 1 && !map.has(ch)) map.set(ch, { code, finger, shift: false, row: rowIndex, col });
       if (shiftCh && shiftCh.length === 1 && !map.has(shiftCh)) {
-        map.set(shiftCh, { code, finger, shift: true });
+        map.set(shiftCh, { code, finger, shift: true, row: rowIndex, col });
       }
     }
   }

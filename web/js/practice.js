@@ -21,6 +21,8 @@ export const KINDS = {
   letters: { label: 'Nácvik jednotlivých kláves', child: 'Klávesy jedna po druhé', needsKeys: true },
   reach: { label: 'Návrat do základní polohy', child: 'Zpátky domů', needsKeys: true },
   mixedkeys: { label: 'Zamíchané skupinky', child: 'Zamíchané skupinky', needsKeys: true },
+  scales: { label: 'Vzory z kláves dokola', child: 'Vzory z kláves', needsKeys: true },
+  wordpatterns: { label: 'Skupinky slov dokola', child: 'Slova dokola' },
   syllables: { label: 'Slabiky', child: 'Slabiky' },
   words: { label: 'Slova', child: 'Slova' },
   sentences: { label: 'Věty', child: 'Věty' },

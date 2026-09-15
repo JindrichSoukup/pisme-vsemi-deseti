@@ -64,7 +64,7 @@ dostaly úplně stejné materiály a stejný čas.
 Tohle je přímý důsledek té studie a asi největší jednotlivé rozhodnutí
 v návrhu obrazovky.
 
-Osmapadesát lekcí vypsaných pod sebou je přesně ten vzdálený cíl, o kterém
+Devadesát lekcí vypsaných pod sebou je přesně ten vzdálený cíl, o kterém
 Bandura a Schunk ukázali, že nepomáhá. Navíc dělá dvě věci zároveň: dnešní
 práci ukáže jako nepatrný zlomek celku a všechno ostatní jako nesplněné.
 Dítě tak začíná každý den pohledem na dlouhý seznam toho, co ještě neumí.

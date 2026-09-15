@@ -112,7 +112,7 @@ const reviewSteps = [
   { kind: 'mixed', label: 'Procvičení', lines: 4 },
 ];
 
-export const LESSONS = [
+const BASE_LESSONS = [
   /* ------------------------------------------------- základní řada */
   L('L01', 'Základní řada', 'F a J: domov ukazováčků', ['f', 'j'], 40, {
     lead: 'Dneska najdeme domov pro obě ruce. Levý ukazováček polož na F, pravý ukazováček na J. Na obou klávesách je malý hrbolek, nahmatáš ho i poslepu. To je tvoje kotva: kdykoliv se ztratíš, sjedeš prstem po klávesnici, najdeš hrbolek a hned víš, kde jsi. Mezi skupinkami se mačká mezerník palcem, ten zůstává dole a nikam neodchází.',
@@ -741,6 +741,71 @@ export const LESSONS = [
     { kind: 'theme', label: 'Věty ze hry', lines: 4, theme: 'minecraft', mode: 'sentences' },
   ]),
 ];
+
+/* --------------------------------------------- lekce rozdělené na dvě */
+
+/**
+ * Bloky, ve kterých se učí nová písmena. Od lekce s A a Ů dál se každá taková
+ * lekce dělí na dvě. Dřív obsahovala slova i procvičení, což do věty je
+ * totéž, a u dítěte, které píše pětatřicet úhozů za minutu, trvala půl hodiny.
+ */
+const LETTER_BLOCKS = new Set(['Základní řada', 'Horní řada', 'Dolní řada', 'Háčky a čárky']);
+
+const KEY_NAMES = { ',': 'Čárka', '.': 'Tečka', '-': 'Pomlčka' };
+
+function keyLabel(keys) {
+  return keys.map((k) => KEY_NAMES[k] || k.toUpperCase()).join(' a ');
+}
+
+/**
+ * Z jedné lekce udělá dvě.
+ *
+ * První si nechá id i nová písmena a končí slovy. Druhá dostane id s P na
+ * konci a nová písmena už nepřidává: po rozcvičce jsou v ní vzory z kláves
+ * a skupinky slov pořád dokola, a na konci procvičení, které se z první
+ * lekce přesunulo sem. Tím se slova a procvičení v jedné lekci neopakují.
+ */
+function splitLesson(lesson) {
+  const mixed = lesson.steps.filter((s) => s.kind === 'mixed');
+  const first = { ...lesson, steps: lesson.steps.filter((s) => s.kind !== 'mixed') };
+
+  const punct = (lesson.steps.find((s) => s.punct) || {}).punct;
+
+  const second = {
+    id: lesson.id + 'P',
+    block: lesson.block,
+    title: `${keyLabel(lesson.newKeys)}: vzory dokola`,
+    newKeys: [],
+    focusKeys: lesson.newKeys,
+    targetCpm: lesson.targetCpm,
+    intro: {
+      lead: 'Dnes žádná nová klávesa. To, co přibylo v minulé lekci, si prsty usadí ve vzorech,'
+        + ' které se opakují pořád dokola, jako když se na klavír hraje stupnice.',
+      points: [
+        'Stejný vzor píšeš několikrát za sebou. Druhé kolo už má jít samo, bez čtení.',
+        'Mezerník je součást vzoru, nezastavuj se před ním.',
+        'Nejdřív vzory z kláves, potom skupinky slov a nakonec procvičení.',
+      ],
+    },
+    steps: [
+      warmup,
+      { kind: 'scales', label: 'Vzory z kláves', lines: 3 },
+      { kind: 'wordpatterns', label: 'Slova dokola', lines: 4, punct },
+      ...mixed,
+    ],
+  };
+  return [first, second];
+}
+
+function needsSplit(lesson, index) {
+  return index >= BASE_LESSONS.findIndex((l) => l.id === 'L04')
+    && LETTER_BLOCKS.has(lesson.block)
+    && lesson.newKeys.length > 0
+    && lesson.steps.some((s) => s.kind === 'words')
+    && lesson.steps.some((s) => s.kind === 'mixed');
+}
+
+export const LESSONS = BASE_LESSONS.flatMap((l, i) => (needsSplit(l, i) ? splitLesson(l) : [l]));
 
 /**
  * Znaky, které lekce zpřístupní, ale nedriluje je samostatně.
