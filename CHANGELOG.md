@@ -6,63 +6,53 @@ i vydání na GitHubu se stejným popisem.
 
 ## 1.2.0
 
+### Osnova
+
+- **Osnova má 90 lekcí místo 39.** Nácviku na jednu novou klávesu je dvakrát víc
+  a den u klávesnice se nijak neprodloužil. Vzorem byl DOSový kurz z roku 1990,
+  který dává na klávesu skoro čtyřnásobek nácviku než naše původní verze.
+- **Písmena se učí po jednom.** Horní, dolní i číselná řada jdou po jedné klávese,
+  vždycky ale levá a hned za ní její zrcadlová pravá, aby se dvojice dala
+  cvičit střídáním rukou. Mezi bloky jsou opakovací lekce.
+- **Lekce s novým písmenem se dělí na dvě.** Od lekce s A a Ů má první část
+  nácvik a slova. Druhá část přináší nový způsob procvičování: vzory z kláves
+  pořád dokola jako stupnici (`asdf jklů ůlkj fdsa`, `adsf jlků ůklj fsda`,
+  `adjl ůkfs`), krátké skupinky slov dokola (`jak lak sak sad`) a na konci
+  procvičení. Slova a procvičení byla v jedné lekci do věty totéž.
+- **Číselná řada je spárovaná symetricky**: Š a Á, Č a Ý, Ř a Ž, Ě a Í.
+- **Čárka, tečka a pomlčka se procvičí i za slovy**: `duben - lepidlo - lid -`.
+- **Cvičení od dolní řady dál má čtyři řádky místo tří.**
+
 ### Nové
 
-- **Rodič může zajistit obrázek po příští lekci.** V nastavení v přehledu pro
-  rodiče je volba, že po příští dokončené lekci obrázek do notýsku určitě
-  přijde, bez ohledu na hvězdičky. Po předání se sama vypne. Dítě o ní nic
-  neví, takže odměna zůstává překvapením.
+- **Po splnění dnešního cíle program radí odpočinek.** Místo „Zvládneš ještě
+  dvě cvičení?“ řekne, že cíl je splněný a že je lepší si teď odpočinout.
+  Hlavní tlačítko je Konec pro dnešek.
+- **Rodič může zajistit obrázek po příští lekci.** Po předání se volba sama
+  vypne a dítě o ní dopředu neví, takže odměna zůstává překvapením.
 - **Klávesy, které dřou, jde seřadit** celkově, podle chybovosti nebo podle
-  reakce. Chybová a pomalá klávesa jsou dva různé problémy. Malá chybovost se
-  ukazuje na desetinu procenta, aby řazení nebylo nahodilé.
-
-### Změny
-
-- **Lekce s novým písmenem se dělí na dvě, osnova má 90 lekcí.** Od lekce
-  s A a Ů dál má první část nácvik a slova, druhá část vzory z kláves
-  (`asdf jklů ůlkj fdsa`, `adsf jlků ůklj fsda`, `adjl ůkfs`), skupinky slov
-  dokola (`jak lak sak sad`) a na konci procvičení. Slova a procvičení byla
-  v jedné lekci do věty totéž a lekce s A a Ů trvala dítěti 31 minut.
-- **Osnova má 58 lekcí místo 39.** Písmena horní, dolní a číselné řady se teď
-  učí po jednom, ne po dvou naráz, a mezi ně jsou vložené opakovací lekce.
-  Vzorem byl DOSový kurz z roku 1990, který má na jednu klávesu skoro
-  čtyřnásobek nácviku. Rozdíl se tím zmenšil z čtyřnásobku na dvojnásobek,
-  aniž by se prodloužil den u klávesnice.
-- **Cvičení od dolní řady dál má čtyři řádky místo tří.** Dítě už v té době
-  píše rychleji, takže lekce zabere stejný čas, ale nácviku je o třetinu víc.
-- **Dvojice zůstává didaktickou jednotkou.** Lekce s levou klávesou je vždycky
-  následovaná lekcí s její zrcadlovou pravou, takže střídání rukou nezmizelo.
-- **Čárka, tečka a pomlčka se procvičí i za slovy**, ne jen samy o sobě.
-  Řádek pak vypadá jako `duben - lepidlo - lid -`, tak jak to dělaly staré
-  kurzy.
-- **Číselná řada je spárovaná symetricky**: Š a Á jsou prostředníčky, Č a Ý
-  ukazováčky, Ř a Ž jejich krok dovnitř, Ě a Í prsteníčky, É zůstává samo.
-  Dřív se párovala po sousedech, což jako jediné místo v osnově neumožňovalo
-  cvičit střídání rukou.
+  reakce.
+- **Měří se rytmus psaní.** Každý úhoz se zařadí podle toho, co se zrovna děje
+  (konec slova, začátek slova, stejný prst, stejná ruka, střídání rukou) a u
+  každé skupiny se sčítají zaváhání. Vedle profilu se ukládá syrový záznam
+  úhozů do `<profil>.keys.jsonl` jako podklad pro pozdější rozbor.
 
 ### Opravy
 
-- **Po splnění dnešního cíle program radí odpočinek.** Mezi cvičeními i po
-  dokončené lekci místo „Zvládneš ještě dvě cvičení?“ řekne, že je cíl splněný
-  a že je lepší si teď odpočinout. Hlavní tlačítko je Konec pro dnešek.
-- **Přerušená lekce se ukládá.** Když dítě skončilo uprostřed lekce, hotová
-  cvičení se zahodila, takže se mu nezapočítal čas do dnešního cíle ani
-  statistika kláves. Teď se uloží spolu s místem, kde pokračovat.
+- **Přerušená lekce se ukládá.** Hotová cvičení se dřív zahodila, takže se
+  nezapočítal čas do dnešního cíle ani statistika kláves.
 - **Dokončení přerušené lekce dá hvězdičky.** Pokračování od prostředního
-  cvičení se bralo jako opakování kousku lekce, takže se hvězdičky nezapsaly
-  a lekce nešla dál. Přerušení se zato nepočítá do tří pokusů, po kterých se
-  lekce odemkne i bez hvězdičky.
-- **Změna osnovy zamykala hotové lekce.** Odemykání se dívalo jen na lekci
-  bezprostředně předcházející, takže po vložení nové lekce se zamklo i to, co
-  měl uživatel dávno hotové, a naopak šlo přeskočit dopředu. Teď je odemčeno
-  všechno až po nejvzdálenější zvládnutou lekci a k tomu jedna další, a lekce,
-  kterou už někdo dělal, se nezamyká nikdy. Pravidla pro další změny osnovy
-  jsou sepsaná v hlavičce curriculum.js.
-- Zamíchané skupinky vyšly naprázdno v lekci, jejíž nová klávesa nebyla
-  písmeno, tedy u čárky, tečky a pomlčky.
-- Sevření mezi domovské klávesy bylo u lekce s jedinou novou klávesou pořád
-  ten samý řádek. Teď druhý řádek přibírá i naposledy probrané sevření druhé
-  ruky, ať se návrat cvičí na obou rukou.
+  cvičení se bralo jako opakování kousku, lekce tak nešla dál.
+- **Změna osnovy nezamyká hotové lekce.** Odemčeno je všechno po nejvzdálenější
+  zvládnutou lekci a jedna další. Pravidla pro další změny osnovy jsou
+  v hlavičce `curriculum.js`.
+- Zamíchané skupinky vyšly naprázdno u čárky, tečky a pomlčky.
+- Sevření mezi domovské klávesy bylo u jednoklávesové lekce pořád stejné.
+
+### Aktualizace z předchozí verze
+
+Program je potřeba zavřít a spustit znovu přes `start.bat`. Dosavadní pokrok
+zůstává, lekce si drží svá id.
 
 ## 1.1.0
 
