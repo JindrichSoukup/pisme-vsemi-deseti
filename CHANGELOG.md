@@ -32,6 +32,16 @@ i vydání na GitHubu se stejným popisem.
 
 ### Opravy
 
+- **Po splnění dnešního cíle program radí odpočinek.** Mezi cvičeními i po
+  dokončené lekci místo „Zvládneš ještě dvě cvičení?“ řekne, že je cíl splněný
+  a že je lepší si teď odpočinout. Hlavní tlačítko je Konec pro dnešek.
+- **Přerušená lekce se ukládá.** Když dítě skončilo uprostřed lekce, hotová
+  cvičení se zahodila, takže se mu nezapočítal čas do dnešního cíle ani
+  statistika kláves. Teď se uloží spolu s místem, kde pokračovat.
+- **Dokončení přerušené lekce dá hvězdičky.** Pokračování od prostředního
+  cvičení se bralo jako opakování kousku lekce, takže se hvězdičky nezapsaly
+  a lekce nešla dál. Přerušení se zato nepočítá do tří pokusů, po kterých se
+  lekce odemkne i bez hvězdičky.
 - **Změna osnovy zamykala hotové lekce.** Odemykání se dívalo jen na lekci
   bezprostředně předcházející, takže po vložení nové lekce se zamklo i to, co
   měl uživatel dávno hotové, a naopak šlo přeskočit dopředu. Teď je odemčeno

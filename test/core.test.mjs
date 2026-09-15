@@ -1035,3 +1035,47 @@ test('skupinky slov se na řádku opakují a slova znají jen probraná písmena
     assert.ok(words.length > new Set(words).size, `řádek se neopakuje: ${line}`);
   }
 });
+
+/* ---------------------------------------- splněný dnešní cíl uprostřed lekce */
+
+test('po splnění dnešního cíle se radí odpočinek, ne další cvičení', async () => {
+  const { restText } = await import('../web/js/views/lesson.js');
+  const text = restText(12);
+  assert.match(text, /cíl je splněný/);
+  assert.match(text, /12 minut/);
+  assert.match(text, /odpočinek/);
+  assert.match(text, /počká/, 'dítě má vědět, že o rozdělanou lekci nepřijde');
+  assert.doesNotMatch(text, /zvládneš|dáš ještě/i, 'po splnění cíle se už nepobízí');
+  assert.doesNotMatch(text, /splnila|splnil\b|skončila|šikovn/, 'formulace je bez rodu a nechválí dítě');
+});
+
+test('do dnešního cíle se počítají i cvičení z rozdělané lekce', async () => {
+  const { goalReached } = await import('../web/js/views/lesson.js');
+  const today = new Date().toLocaleDateString('sv-SE');
+  const app = (seconds) => ({
+    profile: { settings: { dailyGoalMinutes: 10 }, days: { [today]: { seconds } } },
+  });
+  const twoMinutes = [{ durationMs: 60000 }, { durationMs: 60000 }];
+
+  assert.equal(goalReached(app(500), twoMinutes).done, true, '500 s uložených a dvě minuty teď je přes deset minut');
+  assert.equal(goalReached(app(300), twoMinutes).done, false);
+  assert.equal(goalReached(app(0), []).done, false);
+  assert.equal(goalReached({ profile: { settings: {}, days: {} } }, []).done, false, 'bez dat se nic nerozbije');
+});
+
+test('přerušená lekce se nepočítá jako jeden ze tří pokusů', async () => {
+  const { reachedIndex } = await import('../web/js/curriculum.js');
+  const interrupted = { lessons: { [LESSONS[5].id]: { stars: 0, attempts: [{ partial: true }, { partial: true }, { partial: true }] } } };
+  assert.equal(reachedIndex(interrupted), -1, 'tři přerušení nejsou tři pokusy');
+
+  const full = { lessons: { [LESSONS[5].id]: { stars: 0, attempts: [{}, {}, { partial: true }, {}] } } };
+  assert.equal(reachedIndex(full), 5, 'tři celé pokusy lekci pustí dál');
+});
+
+test('i po dokončené lekci se po splnění cíle radí odpočinek', async () => {
+  const { restAfterLessonText } = await import('../web/js/views/lesson.js');
+  const text = restAfterLessonText(11);
+  assert.match(text, /cíl je splněný/);
+  assert.match(text, /odpočinek/);
+  assert.doesNotMatch(text, /splnila|šikovn/);
+});

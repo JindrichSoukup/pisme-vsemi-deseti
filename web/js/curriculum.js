@@ -867,9 +867,12 @@ export function lessonIndex(id) {
  * Je lekce odemčená? Odemyká se první hvězdičkou v předchozí lekci.
  * Aby se dítě nezaseklo, stačí i tři pokusy o předchozí lekci.
  */
-/** Zvládnutá lekce: aspoň hvězdička, nebo tři pokusy, ať se nikdo nezasekne. */
+/**
+ * Zvládnutá lekce: aspoň hvězdička, nebo tři celé pokusy, ať se nikdo nezasekne.
+ * Přerušená lekce a opakování jednoho cvičení se za pokus nepočítají.
+ */
 function passed(rec) {
-  return !!rec && (rec.stars > 0 || (rec.attempts || []).length >= 3);
+  return !!rec && (rec.stars > 0 || (rec.attempts || []).filter((a) => !a.partial).length >= 3);
 }
 
 /**

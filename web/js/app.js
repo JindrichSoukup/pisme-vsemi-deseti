@@ -27,7 +27,8 @@ export const app = {
   async go(screen, params = {}) {
     // předchozí obrazovka může chtít po sobě uklidit (třeba odpojit klávesnici)
     const prev = VIEWS[this.screen];
-    if (prev && prev.leave) prev.leave();
+    // čeká se, až uloží rozdělanou práci, jinak by další obrazovka ukázala stará data
+    if (prev && prev.leave) await prev.leave();
 
     this.screen = screen;
     this.root.className = 'screen-' + screen;

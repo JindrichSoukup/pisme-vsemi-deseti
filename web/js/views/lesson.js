@@ -12,21 +12,39 @@ import {
 import { api, saveResultSafe, saveStickerSafe } from '../api.js';
 import { maybeAward, stickerSvg, printStickers } from '../stickers.js';
 import { esc, starsHtml, focusSoon, plural } from '../ui.js';
+import { dailyGoal } from './home.js';
 
 let session = null;
 
-export function leave() {
-  // Když odchází uprostřed lekce, poznamenáme si, u kterého cvičení skončila.
-  if (session && session.engine && !session.finished) {
-    rememberProgress(session.app, session.lesson.id, session.stepIdx);
-  }
-  if (session && session.engine) session.engine.destroy();
+export async function leave() {
+  const current = session;
   session = null;
+  if (!current) return;
+  if (current.engine) current.engine.destroy();
+  if (current.finished) return;
+
+  // Hotová cvičení se uloží, i když lekce doběhnout nestihla. Jinak by se
+  // dítěti nezapočítal čas do dnešního cíle ani statistika kláves, a právě
+  // po splnění cíle mu program radí skončit uprostřed lekce.
+  if (current.collected.length && !current.lesson.practice) {
+    const { body } = resultPayload(current, true);
+    body.resumeStep = current.betweenSteps ? current.stepIdx + 1 : current.stepIdx;
+    try {
+      const saved = await saveResultSafe(current.app.profile.id, body);
+      current.app.profile = saved.profile;
+    } catch {
+      /* uloží se samo, až se program zase ozve */
+    }
+    return;
+  }
+  if (current.engine && !current.lesson.practice) {
+    rememberProgress(current.app, current.lesson.id, current.stepIdx);
+  }
 }
 
 /** Uloží nebo smaže poznámku o rozdělané lekci. Výpadek spojení nevadí. */
 function rememberProgress(app, lessonId, step) {
-  if (session && session.lesson && session.lesson.practice) return;
+  if (String(lessonId).startsWith('EXTRA-')) return;
   const rec = app.profile.lessons[lessonId] || {};
   if (step === null) delete rec.lastStep;
   else rec.lastStep = step;
@@ -132,6 +150,9 @@ function renderIntro() {
   startBtn.addEventListener('click', () => {
     session.stepIdx = Number(startBtn.dataset.step || 0);
     session.startedAt = session.stepIdx;
+    // Pokračování tam, kde se minule přestalo, dokončuje celou lekci.
+    // Opakování jednoho cvičení přes seznam níž je naopak jen kousek.
+    session.resumed = session.stepIdx > 0;
     startStep();
   });
 
@@ -186,6 +207,7 @@ function legend() {
 /* ------------------------------------------------------------------ cvičení */
 
 function startStep() {
+  session.betweenSteps = false;
   const { app, lesson, stepIdx } = session;
   const stepDef = lesson.steps[stepIdx];
   const built = buildStep(
@@ -334,8 +356,10 @@ function finishStep(raw) {
   const r = computeResult({ typed: raw.typed, errors: raw.errors, durationMs: raw.durationMs });
 
   if (isLast) return finishLesson();
+  session.betweenSteps = true;
 
   const left = remainingWork(lesson, session.stepIdx + 1, recentSpeed(app.profile));
+  const goal = goalReached(app, session.collected);
 
   app.root.innerHTML = `
     <div class="stack center">
@@ -345,35 +369,72 @@ function finishStep(raw) {
           <div class="metric"><b>${r.netCpm}</b><span>úhozů za minutu</span></div>
           <div class="metric"><b>${pct(r.accuracy)}</b><span>přesnost</span></div>
         </div>
-        <p style="margin:.8rem 0 0">${esc(remainingText(left))}</p>
+        <p style="margin:.8rem 0 0">${esc(goal.done ? restText(goal.minutes) : remainingText(left))}</p>
       </div>
-      <div class="row" style="justify-content:center">
-        <button class="btn-quiet" id="again">Znovu</button>
-        <button class="btn-primary btn-big" id="next">Další cvičení</button>
-      </div>
-      <p class="muted small" style="margin:0">
-        <button class="btn-quiet" data-go="home">Konec pro dnešek</button><br>
-        Zbytek lekce na tebe počká, program si pamatuje, kde jsi skončila.
-      </p>
+      ${goal.done
+    ? `<div class="row" style="justify-content:center">
+          <button class="btn-primary btn-big" data-go="home" id="rest">Konec pro dnešek</button>
+        </div>
+        <p class="muted small" style="margin:0">
+          <button class="btn-quiet" id="next">Přesto ještě jedno cvičení</button>
+        </p>`
+    : `<div class="row" style="justify-content:center">
+          <button class="btn-quiet" id="again">Znovu</button>
+          <button class="btn-primary btn-big" id="next">Další cvičení</button>
+        </div>
+        <p class="muted small" style="margin:0">
+          <button class="btn-quiet" data-go="home">Konec pro dnešek</button><br>
+          Zbytek lekce na tebe počká, program si pamatuje, u kterého cvičení to bylo.
+        </p>`}
     </div>`;
 
   const next = app.root.querySelector('#next');
-  focusSoon(next);
+  focusSoon(goal.done ? app.root.querySelector('#rest') : next);
   next.addEventListener('click', () => {
     session.stepIdx += 1;
     startStep();
   });
-  app.root.querySelector('#again').addEventListener('click', () => {
-    session.collected.pop();
-    startStep();
-  });
+  const again = app.root.querySelector('#again');
+  if (again) {
+    again.addEventListener('click', () => {
+      session.collected.pop();
+      startStep();
+    });
+  }
 }
 
-async function finishLesson() {
-  const { app, lesson, index } = session;
-  session.finished = true;
-  rememberProgress(app, lesson.id, null);
-  const total = session.collected.reduce(
+/**
+ * Jestli je dnešní cíl splněný, včetně cvičení z téhle lekce, která se na
+ * server uloží až na jejím konci.
+ */
+export function goalReached(app, collected) {
+  const today = new Date().toLocaleDateString('sv-SE');
+  const saved = ((app.profile.days || {})[today] || {}).seconds || 0;
+  const now = collected.reduce((n, r) => n + (r.durationMs || 0), 0) / 1000;
+  const goal = dailyGoal(saved + now, app.profile.settings.dailyGoalMinutes || undefined);
+  return { done: goal.done, minutes: Math.max(1, Math.round((saved + now) / 60)) };
+}
+
+/**
+ * Co říct, když je dnešní cíl splněný a lekce ještě ne. Místo pobídky
+ * k dalšímu cvičení doporučí odpočinek: kratší denní dávky fungují líp
+ * než dlouhé sezení a únava na konci jen upevňuje chyby.
+ */
+export function restAfterLessonText(minutes) {
+  return `Dnešní cíl je splněný, u klávesnice to bylo ${minutes} ${plural(minutes, 'minuta', 'minuty', 'minut')}.`
+    + ' Další lekce počká na zítřek, prsty si teď zaslouží odpočinek.';
+}
+
+export function restText(minutes) {
+  return `Dnešní cíl je splněný, u klávesnice to bylo ${minutes} ${plural(minutes, 'minuta', 'minuty', 'minut')}.`
+    + ' I když je lákavé lekci dokončit, prsty si teď zaslouží odpočinek.'
+    + ' Zítra jim to půjde líp a zbytek lekce na tebe počká.';
+}
+
+/** Výsledek hotových cvičení tak, jak se posílá na server. */
+function resultPayload(sess, partial) {
+  const { app, lesson } = sess;
+  const total = sess.collected.reduce(
     (acc, r) => ({
       typed: acc.typed + r.typed,
       errors: acc.errors + r.errors,
@@ -384,14 +445,9 @@ async function finishLesson() {
   );
 
   const result = computeResult({ ...total, targetCpm: lesson.targetCpm });
-  const previousBest = (app.profile.lessons[lesson.id] || {}).bestCpm || 0;
-
-  // odměna se losuje ještě před uložením, ať se počítá se stavem před lekcí
-  const award = maybeAward(app.profile, lesson.id, result.stars);
-
-  let saveError = null;
-  try {
-    const saved = await saveResultSafe(app.profile.id, {
+  return {
+    result,
+    body: {
       lessonId: lesson.id,
       cpm: result.cpm,
       netCpm: result.netCpm,
@@ -400,10 +456,10 @@ async function finishLesson() {
       keystrokes: result.typed,
       durationMs: result.durationMs,
       stars: result.stars,
-      partial: (session.startedAt || 0) > 0,
+      partial,
       keys: summarizeKeys(total.keyLog),
       // výsledky po jednotlivých cvičeních, ať se pozná, který druh dře
-      steps: session.collected.map((r) => ({
+      steps: sess.collected.map((r) => ({
         kind: r.kind,
         typed: r.typed,
         errors: r.errors,
@@ -414,7 +470,7 @@ async function finishLesson() {
       // Syrový záznam úhozů. Na obrazovce se nepoužívá, ukládá se stranou
       // kvůli pozdějšímu rozboru: bez něj se nedá zpětně zjistit nic, co
       // jsme dopředu nezapočítali.
-      strokes: session.collected.map((r) => ({
+      strokes: sess.collected.map((r) => ({
         kind: r.kind,
         chars: r.keyLog.map((k) => k.char).join(''),
         typed: r.keyLog.map((k) => (k.ok ? '' : k.got || '?')).join('|'),
@@ -423,8 +479,28 @@ async function finishLesson() {
         line: r.keyLog.map((k) => k.line).join(','),
       })),
       practice: !!lesson.practice,
-      assignmentId: session.assignmentId,
-    });
+      assignmentId: sess.assignmentId,
+    },
+  };
+}
+
+async function finishLesson() {
+  const { app, lesson, index } = session;
+  session.finished = true;
+  rememberProgress(app, lesson.id, null);
+
+  // Opakování jen části lekce hvězdičky nepřidá. Pokračování v lekci, kterou
+  // dítě minule přerušilo, ale ano: celou ji udělalo, jen na dvakrát.
+  const partial = (session.startedAt || 0) > 0 && !session.resumed;
+  const { result, body } = resultPayload(session, partial);
+  const previousBest = (app.profile.lessons[lesson.id] || {}).bestCpm || 0;
+
+  // odměna se losuje ještě před uložením, ať se počítá se stavem před lekcí
+  const award = maybeAward(app.profile, lesson.id, result.stars);
+
+  let saveError = null;
+  try {
+    const saved = await saveResultSafe(app.profile.id, body);
     app.profile = saved.profile;
     if (award) {
       const res = await saveStickerSafe(app.profile.id, award.id, lesson.id);
@@ -436,6 +512,8 @@ async function finishLesson() {
 
   const isNewBest = result.netCpm > previousBest && previousBest > 0;
   const hasNext = !lesson.practice && index < LESSONS.length - 1;
+  // uložený profil už dnešní čas obsahuje, neuložený ho musí dostat z lekce
+  const goal = goalReached(app, saveError ? session.collected : []);
 
   app.root.innerHTML = `
     <div class="stack">
@@ -450,6 +528,7 @@ async function finishLesson() {
         </div>
         ${isNewBest ? '<p class="muted">Tohle je tvůj nový osobní rekord v téhle lekci.</p>' : ''}
         ${!lesson.practice && result.stars < 3 ? `<p class="muted small">Tři hvězdičky jsou za přesnost aspoň 98 % a rychlost ${lesson.targetCpm} úhozů za minutu.</p>` : ''}
+        ${goal.done && hasNext ? `<p style="margin:.8rem 0 0">${esc(restAfterLessonText(goal.minutes))}</p>` : ''}
       </div>
 
       ${award ? rewardHtml(award) : ''}
@@ -460,16 +539,25 @@ async function finishLesson() {
         <span class="small muted">(${esc(saveError)})</span>
       </div>` : ''}
 
-      <div class="row" style="justify-content:center">
-        <button class="btn-quiet" id="retry">Zkusit lekci znovu</button>
-        <button class="btn-quiet" data-go="home">Zpět na lekce</button>
-        ${hasNext ? '<button class="btn-primary btn-big" id="next-lesson">Další lekce</button>' : ''}
-      </div>
+      ${goal.done && hasNext
+    ? `<div class="row" style="justify-content:center">
+          <button class="btn-quiet" id="retry">Zkusit lekci znovu</button>
+          <button class="btn-primary btn-big" data-go="home" id="rest">Konec pro dnešek</button>
+        </div>
+        <p class="muted small center" style="margin:0">
+          <button class="btn-quiet" id="next-lesson">Přesto další lekce</button>
+        </p>`
+    : `<div class="row" style="justify-content:center">
+          <button class="btn-quiet" id="retry">Zkusit lekci znovu</button>
+          <button class="btn-quiet" data-go="home">Zpět na lekce</button>
+          ${hasNext ? '<button class="btn-primary btn-big" id="next-lesson">Další lekce</button>' : ''}
+        </div>`}
     </div>`;
 
   const nextBtn = app.root.querySelector('#next-lesson');
+  if (goal.done && hasNext) focusSoon(app.root.querySelector('#rest'));
   if (nextBtn) {
-    focusSoon(nextBtn);
+    if (!(goal.done && hasNext)) focusSoon(nextBtn);
     nextBtn.addEventListener('click', () => app.go('lesson', { index: index + 1 }));
   }
   app.root.querySelector('#retry').addEventListener('click', () => app.go('lesson', { index }));
