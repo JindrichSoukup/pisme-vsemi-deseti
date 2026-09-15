@@ -6,6 +6,7 @@ data/
 # a starý DOSový kurz, ze kterého jsem jen četl.
 *.pdf
 tmp/
+psacistr.zip
 jungle-junior-jungle-junior-lesson.png
 
 # Syrové záznamy úhozů. Patří k datům dítěte, ne do repozitáře.
