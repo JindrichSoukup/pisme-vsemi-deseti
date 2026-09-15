@@ -1104,3 +1104,21 @@ test('když má dítě všechny obrázky, ani zajištění žádný nevyrobí', 
   const profile = { lessons: {}, stickers: STICKERS.map((s) => ({ id: s.id })) };
   assert.equal(maybeAward(profile, 'L09', 3, { guaranteed: true }), null);
 });
+
+test('klávesy, které dřou, jde seřadit podle chybovosti i podle reakce', () => {
+  const stats = {
+    a: { presses: 100, errors: 20, latencyEma: 200 }, // chybová, ale rychlá
+    b: { presses: 100, errors: 1, latencyEma: 900 },  // přesná, ale pomalá
+    c: { presses: 100, errors: 5, latencyEma: 400 },
+  };
+  assert.equal(weakestKeys(stats, 10, 20, 'errors')[0].char, 'a');
+  assert.equal(weakestKeys(stats, 10, 20, 'latency')[0].char, 'b');
+  assert.equal(weakestKeys(stats, 10, 20, 'nesmysl').length, 3, 'neznámé řazení spadne na celkové');
+
+  // řadí se před oříznutím: nejpomalejší klávesa se musí dostat do první desítky
+  const many = {};
+  for (let i = 0; i < 15; i++) many['k' + i] = { presses: 50, errors: 10, latencyEma: 100 };
+  many.slow = { presses: 50, errors: 0, latencyEma: 2000 };
+  assert.ok(!weakestKeys(many, 10, 20, 'errors').some((r) => r.char === 'slow'));
+  assert.equal(weakestKeys(many, 10, 20, 'latency')[0].char, 'slow');
+});

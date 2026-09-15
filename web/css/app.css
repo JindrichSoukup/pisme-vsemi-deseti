@@ -87,6 +87,7 @@ button[disabled] { opacity: .45; cursor: not-allowed; }
 .btn-big { font-size: 1.15rem; padding: .9rem 1.8rem; border-radius: 12px; }
 .btn-quiet { background: none; border-color: transparent; color: var(--muted); }
 .btn-quiet:hover { color: var(--ink); background: var(--card); }
+.key-order[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 
 input[type="text"] {
   font: inherit;

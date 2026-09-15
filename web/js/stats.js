@@ -75,7 +75,18 @@ export function summarizeKeys(log) {
  * Nejslabší klávesy z dlouhodobých statistik profilu.
  * Skóre kombinuje chybovost a pomalost, počítají se jen dostatečně procvičené klávesy.
  */
-export function weakestKeys(keyStats, limit = 10, minPresses = 20) {
+/**
+ * Jak řadit klávesy, které dřou. Celkové skóre kombinuje obojí, další dvě
+ * řazení ukážou zvlášť klávesy chybové a klávesy pomalé: to jsou dva různé
+ * problémy a cvičí se jinak.
+ */
+const KEY_ORDER = {
+  score: (a, b) => b.score - a.score,
+  errors: (a, b) => b.errRate - a.errRate || b.latency - a.latency,
+  latency: (a, b) => b.latency - a.latency || b.errRate - a.errRate,
+};
+
+export function weakestKeys(keyStats, limit = 10, minPresses = 20, by = 'score') {
   const rows = Object.entries(keyStats || {})
     .filter(([ch, s]) => s.presses >= minPresses && ch !== ' ')
     .map(([ch, s]) => {
@@ -83,7 +94,8 @@ export function weakestKeys(keyStats, limit = 10, minPresses = 20) {
       const slowness = Math.min(1, (s.latencyEma || 0) / 900);
       return { char: ch, errRate, latency: s.latencyEma || 0, presses: s.presses, score: errRate * 3 + slowness };
     });
-  rows.sort((a, b) => b.score - a.score);
+  // řadí se před oříznutím, jinak by se jen přeskládalo stejných deset kláves
+  rows.sort(KEY_ORDER[by] || KEY_ORDER.score);
   return rows.slice(0, limit);
 }
 

@@ -19,7 +19,7 @@ export async function render(app) {
   const totalSeconds = dayKeys.reduce((n, d) => n + (p.days[d].seconds || 0), 0);
   const totalKeystrokes = dayKeys.reduce((n, d) => n + (p.days[d].keystrokes || 0), 0);
   const done = Object.values(p.lessons).filter((l) => l.stars > 0).length;
-  const weak = weakestKeys(p.keyStats, 10);
+  const weak = weakestKeys(p.keyStats, 10, 20, keyOrder);
   const kinds = kindSummary(p);
 
   app.root.innerHTML = `
@@ -82,7 +82,8 @@ export async function render(app) {
 
       <div class="card">
         <h2>Klávesy, které zatím dřou</h2>
-        ${weak.length ? weakTable(weak, p.settings.layout) : '<p class="muted small">Na tohle je zatím málo dat.</p>'}
+        ${weak.length ? `${keyOrderButtons()}<div id="weak">${weakTable(weak, p.settings.layout)}</div>`
+          : '<p class="muted small">Na tohle je zatím málo dat.</p>'}
       </div>
 
       <div class="card">
@@ -106,6 +107,18 @@ export async function render(app) {
         </p>
       </div>
     </div>`;
+
+  app.root.querySelectorAll('[data-key-order]').forEach((el) => {
+    el.addEventListener('click', () => {
+      keyOrder = el.dataset.keyOrder;
+      try { localStorage.setItem('psani.poradiKlaves', keyOrder); } catch { /* nevadí */ }
+      app.root.querySelector('#weak').innerHTML = weakTable(weakestKeys(p.keyStats, 10, 20, keyOrder), p.settings.layout);
+      app.root.querySelectorAll('[data-key-order]').forEach((b) => {
+        if (b.dataset.keyOrder === keyOrder) b.setAttribute('aria-pressed', 'true');
+        else b.removeAttribute('aria-pressed');
+      });
+    });
+  });
 
   const add = app.root.querySelector('#assign-add');
   if (add) {
@@ -271,6 +284,28 @@ function dayTable(days) {
   </table>`;
 }
 
+/** Naposledy zvolené řazení kláves, ať se nemusí přepínat při každém otevření. */
+let keyOrder = (() => {
+  try { return localStorage.getItem('psani.poradiKlaves') || 'score'; } catch { return 'score'; }
+})();
+
+function keyOrderButtons() {
+  const options = [['score', 'celkově'], ['errors', 'podle chybovosti'], ['latency', 'podle reakce']];
+  return `<p class="small muted" style="margin:0 0 .4rem">Seřadit:
+    ${options.map(([id, label]) => `<button class="btn-quiet key-order" data-key-order="${id}"
+      ${keyOrder === id ? 'aria-pressed="true"' : ''}>${label}</button>`).join('')}
+  </p>`;
+}
+
+/**
+ * Chybovost na desetinu procenta, když je malá. Při celých procentech by
+ * u přesného pisatele vyšlo skoro všude 1 % a řazení by vypadalo nahodile.
+ */
+function errorRate(rate) {
+  if (rate >= 0.1) return pct(rate);
+  return `${(rate * 100).toLocaleString('cs-CZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
+}
+
 function weakTable(rows, layout) {
   return `<table class="keys">
     <tr><th>Klávesa</th><th>Prst</th><th>Chybovost</th><th>Reakce</th><th>Úhozů</th></tr>
@@ -279,7 +314,7 @@ function weakTable(rows, layout) {
       return `<tr>
         <td class="k">${esc(r.char)}</td>
         <td>${esc(info ? info.fingerName : '')}</td>
-        <td>${pct(r.errRate)}</td>
+        <td>${errorRate(r.errRate)}</td>
         <td>${r.latency ? r.latency + ' ms' : '—'}</td>
         <td>${r.presses}</td>
       </tr>`;

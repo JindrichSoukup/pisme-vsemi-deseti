@@ -12,6 +12,9 @@ i vydání na GitHubu se stejným popisem.
   rodiče je volba, že po příští dokončené lekci obrázek do notýsku určitě
   přijde, bez ohledu na hvězdičky. Po předání se sama vypne. Dítě o ní nic
   neví, takže odměna zůstává překvapením.
+- **Klávesy, které dřou, jde seřadit** celkově, podle chybovosti nebo podle
+  reakce. Chybová a pomalá klávesa jsou dva různé problémy. Malá chybovost se
+  ukazuje na desetinu procenta, aby řazení nebylo nahodilé.
 
 ### Změny
 
