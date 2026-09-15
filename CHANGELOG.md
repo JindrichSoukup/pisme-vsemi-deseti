@@ -6,6 +6,13 @@ i vydání na GitHubu se stejným popisem.
 
 ## 1.2.0
 
+### Nové
+
+- **Rodič může zajistit obrázek po příští lekci.** V nastavení v přehledu pro
+  rodiče je volba, že po příští dokončené lekci obrázek do notýsku určitě
+  přijde, bez ohledu na hvězdičky. Po předání se sama vypne. Dítě o ní nic
+  neví, takže odměna zůstává překvapením.
+
 ### Změny
 
 - **Lekce s novým písmenem se dělí na dvě, osnova má 90 lekcí.** Od lekce

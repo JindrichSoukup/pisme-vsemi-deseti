@@ -532,6 +532,8 @@ async function handleApi(req, res, url) {
           earnedAt: new Date().toISOString(),
           lessonId: String(body.lessonId || '').slice(0, 32),
         });
+        // obrázek zajištěný rodičem je předaný, příště se zase losuje
+        if (profile.settings) profile.settings.guaranteeSticker = false;
         await writeProfile(profile);
       }
       return sendJson(res, 200, { stickers: profile.stickers });

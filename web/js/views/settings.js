@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { renderKeyboard } from '../keyboard.js';
 import { esc } from '../ui.js';
 import { vocative } from '../vocative.js';
+import { STICKERS } from '../stickers.js';
 
 export async function render(app) {
   const s = app.profile.settings;
@@ -49,6 +50,8 @@ export async function render(app) {
             ${(s.dailyGoalMinutes ?? 10) === n ? 'checked' : ''}> ${n} minut</label>`).join('')}
         </div>
       </div>
+
+      ${app.isParentView ? stickerCard(app.profile) : ''}
 
       <div class="card">
         <h2>Chyby na řádku</h2>
@@ -149,7 +152,36 @@ export async function render(app) {
   app.root.querySelectorAll('input[name="maxLineErrors"]').forEach((r) => {
     r.addEventListener('change', () => save({ maxLineErrors: Number(r.value) }));
   });
+  const guarantee = app.root.querySelector('#guaranteeSticker');
+  if (guarantee) {
+    guarantee.addEventListener('change', (e) => save({ guaranteeSticker: e.target.checked }));
+  }
+
   app.root.querySelector('#showKeyboard').addEventListener('change', (e) => {
     save({ showKeyboard: e.target.checked });
   });
+}
+
+/**
+ * Obrázek do notýsku jistě po příští lekci. Jen pro rodiče: dítě se to
+ * dopředu nesmí dozvědět, jinak by překvapení přestalo být překvapením.
+ */
+function stickerCard(profile) {
+  const all = STICKERS.length;
+  const owned = (profile.stickers || []).length;
+  const on = !!profile.settings.guaranteeSticker;
+  return `<div class="card">
+    <h2>Obrázek do notýsku</h2>
+    <p class="muted small">Obrázek za lekci jinak přichází náhodně, aby zůstal
+      překvapením. Když dítě mrzí, že dlouho nic nedostalo, jde tady zařídit, že ho
+      po příští dokončené lekci dostane určitě, bez ohledu na hvězdičky. Po předání
+      se nastavení samo vypne. Dítěti to dopředu neříkejte: slíbená odměna chuť
+      k samotné činnosti snižuje, překvapení ne.</p>
+    ${owned >= all
+      ? '<p class="small">Dítě už má všechny obrázky, žádný další není.</p>'
+      : `<label class="row">
+          <input type="checkbox" id="guaranteeSticker" ${on ? 'checked' : ''}>
+          Po příští dokončené lekci obrázek určitě přidat
+        </label>`}
+  </div>`;
 }

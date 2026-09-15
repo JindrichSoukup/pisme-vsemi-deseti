@@ -496,7 +496,8 @@ async function finishLesson() {
   const previousBest = (app.profile.lessons[lesson.id] || {}).bestCpm || 0;
 
   // odměna se losuje ještě před uložením, ať se počítá se stavem před lekcí
-  const award = maybeAward(app.profile, lesson.id, result.stars);
+  const guaranteed = !partial && !!app.profile.settings.guaranteeSticker;
+  const award = maybeAward(app.profile, lesson.id, result.stars, { guaranteed });
 
   let saveError = null;
   try {
@@ -509,6 +510,9 @@ async function finishLesson() {
   } catch (err) {
     saveError = err.message;
   }
+  // Zajištěný obrázek platí jen jednou. Server příznak smaže, až obrázek
+  // zapíše, ale do té doby by ho další lekce ve stejném sezení viděla znovu.
+  if (award && guaranteed) app.profile.settings.guaranteeSticker = false;
 
   const isNewBest = result.netCpm > previousBest && previousBest > 0;
   const hasNext = !lesson.practice && index < LESSONS.length - 1;

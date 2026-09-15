@@ -1079,3 +1079,28 @@ test('i po dokončené lekci se po splnění cíle radí odpočinek', async () =
   assert.match(text, /odpočinek/);
   assert.doesNotMatch(text, /splnila|šikovn/);
 });
+
+/* ------------------------------------------- obrázek zajištěný rodičem */
+
+test('zajištěný obrázek přijde vždycky, i bez hvězdičky a za už odměněnou lekci', () => {
+  const profile = {
+    lessons: { L01: { stars: 1 }, L02: { stars: 1 } },
+    stickers: [{ id: STICKERS[0].id, lessonId: 'L02' }, { id: STICKERS[1].id, lessonId: 'L01' }],
+  };
+  for (let run = 0; run < 50; run++) {
+    const award = maybeAward(profile, 'L02', 0, { guaranteed: true });
+    assert.ok(award, 'zajištěný obrázek nepřišel');
+    assert.ok(!profile.stickers.some((s) => s.id === award.id), 'přišel obrázek, který už dítě má');
+  }
+});
+
+test('bez zajištění se u lekce bez hvězdičky obrázek nedává', () => {
+  for (let run = 0; run < 20; run++) {
+    assert.equal(maybeAward({ lessons: {}, stickers: [] }, 'L05', 0), null);
+  }
+});
+
+test('když má dítě všechny obrázky, ani zajištění žádný nevyrobí', () => {
+  const profile = { lessons: {}, stickers: STICKERS.map((s) => ({ id: s.id })) };
+  assert.equal(maybeAward(profile, 'L09', 3, { guaranteed: true }), null);
+});

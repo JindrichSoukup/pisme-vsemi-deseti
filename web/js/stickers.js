@@ -428,10 +428,20 @@ function escapeHtml(s) {
  * @param {number} stars kolik hvězdiček dítě dostalo
  * @returns {object|null} obrázek k odemčení, nebo null
  */
-export function maybeAward(profile, lessonId, stars) {
-  if (stars < 1) return null;
+export function maybeAward(profile, lessonId, stars, { guaranteed = false } = {}) {
   const owned = new Set((profile.stickers || []).map((s) => s.id));
   if (owned.size >= STICKERS.length) return null;
+
+  // Rodič může zařídit, že po příští lekci obrázek určitě přijde, třeba když
+  // dítě mrzelo, že minule nic nedostalo. Pak se nelosuje a nekouká se ani na
+  // hvězdičky: odměna je za odvedenou práci. Dítěti se to dopředu neříká,
+  // jinak by se z překvapení stal slib a ten motivaci podrývá.
+  if (guaranteed) {
+    const remaining = STICKERS.filter((s) => !owned.has(s.id));
+    return remaining[Math.floor(Math.random() * remaining.length)];
+  }
+
+  if (stars < 1) return null;
 
   // za tuhle lekci už jednou obrázek byl, podruhé ne
   if ((profile.stickers || []).some((s) => s.lessonId === lessonId)) return null;
