@@ -291,6 +291,14 @@ test('co teprve přijde, je schované pod odkazem', () => {
   assert.ok(html.indexOf(LESSONS[4].title) < details, 'hotové lekce zůstávají venku');
 });
 
+test('se zapnutou volbou pro rodiče nejsou v mapě zamčené lekce', () => {
+  const zamceno = lessonMap({ lessons: {} }, 0);
+  assert.ok(zamceno.includes('lesson-card--locked'), 'běžně je zbytek osnovy zamčený');
+  const otevreno = lessonMap({ lessons: {}, settings: { everythingOpen: true } }, 0);
+  assert.ok(!otevreno.includes('lesson-card--locked'), 's volbou jsou všechny lekce k dispozici');
+  assert.ok(!otevreno.includes('disabled'), 'a jde na ně kliknout');
+});
+
 test('na začátku je vidět jen první lekce a schovaný zbytek', () => {
   const html = lessonMap({ lessons: {} }, 0);
   assert.ok(html.includes(LESSONS[0].title));

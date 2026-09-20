@@ -827,11 +827,23 @@ lessonById(BACKSPACE_LESSON).highlightCodes = ['Backspace'];
 /**
  * Smí se v téhle fázi mazat Backspacem?
  * V prvních lekcích ne: české učebnice nechávají chyby být a nechají psát dál,
- * aby se nácvik hmatu nepřerušoval.
+ * aby se nácvik hmatu nepřerušoval. Rodič to může v nastavení obejít, viz
+ * everythingOpen.
  */
-export function backspaceAllowedAt(index) {
+export function backspaceAllowedAt(index, profile) {
+  if (everythingOpen(profile)) return true;
   const at = LESSONS.findIndex((l) => l.id === BACKSPACE_LESSON);
   return at >= 0 && index >= at;
+}
+
+/**
+ * Volba pro rodiče: osnova i Backspace jsou od začátku otevřené. Je pro
+ * testování a pro dospělého, který si kurz opakuje a nepotřebuje, aby ho
+ * program vedl po krocích. Pro dítě, které se učí poprvé, má zůstat vypnutá:
+ * zamčené lekce drží pořadí nácviku a vypnutý Backspace učí psát dál.
+ */
+export function everythingOpen(profile) {
+  return !!(profile && profile.settings && profile.settings.everythingOpen);
 }
 
 /** Znaky, které se v lekcích vůbec neučí, ale text je smí obsahovat od začátku. */
@@ -900,6 +912,7 @@ export function reachedIndex(profile) {
  */
 export function isUnlocked(index, profile) {
   if (index <= 0) return true;
+  if (everythingOpen(profile)) return true;
   if ((profile.lessons || {})[LESSONS[index].id]) return true;
   return index <= reachedIndex(profile) + 1;
 }

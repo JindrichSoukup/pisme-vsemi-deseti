@@ -28,6 +28,9 @@ i vydání na GitHubu se stejným popisem.
 - **Po splnění dnešního cíle program radí odpočinek.** Místo „Zvládneš ještě
   dvě cvičení?“ řekne, že cíl je splněný a že je lepší si teď odpočinout.
   Hlavní tlačítko je Konec pro dnešek.
+- **Volba „Všechno otevřené“ v nastavení pro rodiče.** Odemkne celou osnovu
+  a zapne Backspace od první lekce. Je na vyzkoušení programu a pro dospělého,
+  který si psaní opakuje. Dítě ji nevidí ani nemůže přepnout.
 - **Rodič může zajistit obrázek po příští lekci.** Po předání se volba sama
   vypne a dítě o ní dopředu neví, takže odměna zůstává překvapením.
 - **Klávesy, které dřou, jde seřadit** celkově, podle chybovosti nebo podle

@@ -267,7 +267,7 @@ function startStep() {
   const engine = createEngine(app.root.querySelector('#typing'), {
     sound: app.profile.settings.sound,
     maxLineErrors: app.profile.settings.maxLineErrors ?? 2,
-    allowBackspace: backspaceAllowedAt(session.index),
+    allowBackspace: backspaceAllowedAt(session.index, app.profile),
     onProgress: () => updateHint(engine, kb, hint),
     // při skládání ď nebo Á je háček už stisknutý, nápověda ukáže druhý úhoz
     onCompose: (active) => updateHint(engine, kb, hint, active),

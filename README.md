@@ -83,6 +83,10 @@ Když je port obsazený, dá se zvolit jiný: `node server.js --port 7332`.
   a přesnosti, přehledem klávesových potíží a nastavením dětského profilu.
   Je na samostatné adrese `/rodice.html` a spouští se přes `pro-rodice.bat`.
   V dětské aplikaci nastavení není, dítě si při psaní přepíná jen klávesnici.
+- **Všechno otevřené** je volba pro rodiče: celá osnova a Backspace od začátku.
+  Hodí se na vyzkoušení programu a dospělému, který si psaní opakuje a chce
+  skákat rovnou na konkrétní lekci. Pro dítě, které se učí poprvé, má zůstat
+  vypnutá.
 - **Cvičení jen jednou rukou** a **prstolamy**, tedy slova, kde jeden prst musí
   hned po sobě na dvě různé klávesy. Nejtěžší dvojice se počítají přímo ze
   slovníku, v češtině vedou lo a ol, ce a ec, tr a rt.

@@ -70,9 +70,12 @@ export async function render(app) {
         <p class="muted small" style="margin:0">
           Backspace je v prvních lekcích schválně vypnutý. Chyby se neopravují, jen se
           píše dál, aby se nácvik hmatu nepřerušoval. Zapne se v lekci
-          <b>Backspace: mazání překlepů</b> a od té chvíle už funguje všude.
+          <b>Backspace: mazání překlepů</b> a od té chvíle už funguje všude.${app.isParentView
+    ? ' Obojí jde obejít níž v <b>Všechno otevřené</b>.' : ''}
         </p>
       </div>
+
+      ${app.isParentView ? openEverythingCard(s) : ''}
 
       <div class="card">
         <h2>Zvuk</h2>
@@ -152,6 +155,10 @@ export async function render(app) {
   app.root.querySelectorAll('input[name="maxLineErrors"]').forEach((r) => {
     r.addEventListener('change', () => save({ maxLineErrors: Number(r.value) }));
   });
+  const open = app.root.querySelector('#everythingOpen');
+  if (open) {
+    open.addEventListener('change', (e) => save({ everythingOpen: e.target.checked }));
+  }
   const guarantee = app.root.querySelector('#guaranteeSticker');
   if (guarantee) {
     guarantee.addEventListener('change', (e) => save({ guaranteeSticker: e.target.checked }));
@@ -160,6 +167,28 @@ export async function render(app) {
   app.root.querySelector('#showKeyboard').addEventListener('change', (e) => {
     save({ showKeyboard: e.target.checked });
   });
+}
+
+/**
+ * Celá osnova a Backspace od začátku. Jen pro rodiče, protože dítěti, které
+ * se učí poprvé, tahle volba škodí: zamčené lekce drží pořadí nácviku a
+ * vypnutý Backspace ho učí nezastavovat se u překlepů. Hodí se na vyzkoušení
+ * programu a dospělému, který si psaní jen opakuje.
+ */
+function openEverythingCard(s) {
+  return `<div class="card">
+    <h2>Všechno otevřené</h2>
+    <label class="row">
+      <input type="checkbox" id="everythingOpen" ${s.everythingOpen ? 'checked' : ''}>
+      Odemknout všechny lekce a Backspace od začátku
+    </label>
+    <p class="small muted" style="margin-top:.6rem">
+      Pro vyzkoušení programu nebo pro dospělého, který si psaní opakuje a chce
+      skákat rovnou na konkrétní lekci. Dítěti, které se učí poprvé, to nechte
+      vypnuté: lekce na sebe navazují a mazání překlepů se schválně učí až
+      v polovině kurzu. Hvězdičky ani statistiky se tím nemění.
+    </p>
+  </div>`;
 }
 
 /**

@@ -963,6 +963,17 @@ test('bez jediného záznamu je otevřená jen první lekce', () => {
   assert.ok(!isUnlocked(1, profile), 'druhá lekce se otevře až po první');
 });
 
+test('volba pro rodiče otevře celou osnovu i Backspace', () => {
+  const prazdny = { lessons: {}, settings: { everythingOpen: true } };
+  assert.ok(isUnlocked(LESSONS.length - 1, prazdny), 'poslední lekce jde otevřít hned');
+  assert.equal(backspaceAllowedAt(0, prazdny), true, 'Backspace funguje od první lekce');
+
+  const bezVolby = { lessons: {}, settings: {} };
+  assert.ok(!isUnlocked(1, bezVolby), 'bez volby zůstává osnova zamčená');
+  assert.equal(backspaceAllowedAt(0, bezVolby), false);
+  assert.equal(backspaceAllowedAt(0), false, 'bez profilu platí běžné pravidlo');
+});
+
 test('nezvládnutá lekce dál neodemyká, dokud nepřijdou tři pokusy', async () => {
   const { reachedIndex } = await import('../web/js/curriculum.js');
   const jenPokus = { lessons: { [LESSONS[3].id]: { stars: 0, attempts: [{}, {}] } } };

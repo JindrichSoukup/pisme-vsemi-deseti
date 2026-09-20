@@ -92,6 +92,7 @@ function emptyProfile(id, name) {
       sound: 'error',    // 'off' | 'error' | 'all'
       maxLineErrors: 2,     // 0 = bez omezení
       dailyGoalMinutes: 10, // dnešní cíl, který dítě vidí na úvodní stránce
+      everythingOpen: false, // volba pro rodiče: celá osnova i Backspace od začátku
     },
     lessons: {},  // id lekce -> { stars, bestCpm, bestAccuracy, attempts[] }
     kindStats: {},// druh cvičení -> { runs, keystrokes, errors, durationMs, recent[] }
