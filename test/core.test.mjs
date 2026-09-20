@@ -1060,6 +1060,8 @@ test('do dnešního cíle se počítají i cvičení z rozdělané lekce', async
   assert.equal(goalReached(app(500), twoMinutes).done, true, '500 s uložených a dvě minuty teď je přes deset minut');
   assert.equal(goalReached(app(300), twoMinutes).done, false);
   assert.equal(goalReached(app(0), []).done, false);
+  assert.equal(goalReached(app(300), twoMinutes).left, 3, 'do cíle zbývají tři minuty, zaokrouhleno nahoru');
+  assert.equal(goalReached(app(500), twoMinutes).left, 0, 'po splnění už nic nezbývá');
   assert.equal(goalReached({ profile: { settings: {}, days: {} } }, []).done, false, 'bez dat se nic nerozbije');
 });
 

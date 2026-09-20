@@ -332,17 +332,28 @@ export function hintText(ch, info, composing = false) {
 
 /**
  * Kolik ještě zbývá, řečeno tak, aby to dítě povzbudilo a ne odradilo.
+ * Na prvním místě je čas do dnešního cíle (zaokrouhlený nahoru), ne zbytek
+ * lekce: dítě se má řídit tím, co si s rodičem nastavili, jinak by ho program
+ * pobízel k dalším cvičením i pár minut před koncem. Počet cvičení je jen
+ * odhad, kolik se jich do zbývajícího času vejde, a nikdy jich není víc,
+ * než kolik jich v lekci doopravdy zbývá.
  * Ptáme se, jestli to ještě zvládne, protože rozhodnutí má zůstat na něm.
  */
-export function remainingText({ steps, minutes }) {
+export function remainingText({ steps, minutes, goalLeft }) {
   if (steps <= 0) return 'A to je z téhle lekce všechno.';
+  const lessonMinutes = Math.max(1, Math.ceil(minutes));
+  const left = Math.min(lessonMinutes, Math.max(1, Math.ceil(goalLeft ?? lessonMinutes)));
+  const minut = plural(left, 'minuta', 'minuty', 'minut');
+
   if (steps === 1) {
-    return `Zbývá poslední cvičení, tak na ${minutes} ${plural(minutes, 'minutu', 'minuty', 'minut')}.`;
+    return `Zbývá poslední cvičení, tak na ${left} ${plural(left, 'minutu', 'minuty', 'minut')}.`;
   }
-  const kolik = ['', 'jedno', 'dvě', 'tři', 'čtyři', 'pět', 'šest', 'sedm'][steps] || String(steps);
-  const sloveso = steps >= 2 && steps <= 4 ? 'Zvládneš' : 'Dáš';
-  return `${sloveso} ještě ${kolik} ${plural(steps, 'cvičení', 'cvičení', 'cvičení')}?`
-    + ` Je to tak na ${minutes} ${plural(minutes, 'minutu', 'minuty', 'minut')}.`;
+  const perStep = minutes / steps;
+  const howMany = Math.min(steps, Math.max(1, Math.round(left / perStep)));
+  const kolik = ['', 'jedno', 'dvě', 'tři', 'čtyři', 'pět', 'šest', 'sedm'][howMany] || String(howMany);
+  const zbyva = left >= 2 && left <= 4 ? 'zbývají' : 'zbývá';
+  return `Ještě ti ${zbyva} ${left} ${minut}, to je tak na ${kolik} cvičení.`
+    + ' Myslíš, že to zvládneš?';
 }
 
 /* ------------------------------------------------- konec kroku a lekce */
@@ -358,8 +369,8 @@ function finishStep(raw) {
   if (isLast) return finishLesson();
   session.betweenSteps = true;
 
-  const left = remainingWork(lesson, session.stepIdx + 1, recentSpeed(app.profile));
   const goal = goalReached(app, session.collected);
+  const rest = { ...remainingWork(lesson, session.stepIdx + 1, recentSpeed(app.profile)), goalLeft: goal.left };
 
   app.root.innerHTML = `
     <div class="stack center">
@@ -369,7 +380,7 @@ function finishStep(raw) {
           <div class="metric"><b>${r.netCpm}</b><span>úhozů za minutu</span></div>
           <div class="metric"><b>${pct(r.accuracy)}</b><span>přesnost</span></div>
         </div>
-        <p style="margin:.8rem 0 0">${esc(goal.done ? restText(goal.minutes) : remainingText(left))}</p>
+        <p style="margin:.8rem 0 0">${esc(goal.done ? restText(goal.minutes) : remainingText(rest))}</p>
       </div>
       ${goal.done
     ? `<div class="row" style="justify-content:center">
@@ -405,14 +416,19 @@ function finishStep(raw) {
 
 /**
  * Jestli je dnešní cíl splněný, včetně cvičení z téhle lekce, která se na
- * server uloží až na jejím konci.
+ * server uloží až na jejím konci. `minutes` je dnešní odsezený čas,
+ * `left` kolik minut do cíle ještě zbývá (zaokrouhleno nahoru).
  */
 export function goalReached(app, collected) {
   const today = new Date().toLocaleDateString('sv-SE');
   const saved = ((app.profile.days || {})[today] || {}).seconds || 0;
   const now = collected.reduce((n, r) => n + (r.durationMs || 0), 0) / 1000;
   const goal = dailyGoal(saved + now, app.profile.settings.dailyGoalMinutes || undefined);
-  return { done: goal.done, minutes: Math.max(1, Math.round((saved + now) / 60)) };
+  return {
+    done: goal.done,
+    minutes: Math.max(1, Math.round((saved + now) / 60)),
+    left: goal.left,
+  };
 }
 
 /**

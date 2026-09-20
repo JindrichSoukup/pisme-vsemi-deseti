@@ -35,9 +35,10 @@ Když je port obsazený, dá se zvolit jiný: `node server.js --port 7332`.
   to řekne a pochválí vydrženou práci. Zbytek cesty je schovaný pod odkazem.
 - **Vždy jen jeden řádek na obrazovce**, dost dlouhý, aby se psalo plynule.
   Po jeho dopsání se přeskočí na další sám, mezera navíc nevadí.
-- **Během lekce je vidět, kolik ještě zbývá.** Po každém cvičení se ukáže,
-  kolik jich zůstává a na kolik minut to zhruba je, počítáno podle toho, jak
-  dítě doopravdy píše. Vedle je tlačítko Konec pro dnešek.
+- **Během lekce je vidět, kolik ještě zbývá do dnešního cíle.** Po každém
+  cvičení se ukáže, kolik minut do cíle zbývá a kolik cvičení se do nich
+  zhruba vejde, počítáno podle toho, jak dítě doopravdy píše. Přes cíl program
+  nepobízí. Vedle je tlačítko Konec pro dnešek.
 - **Lekci jde přerušit a vrátit se k ní.** Program si pamatuje, u kterého
   cvičení dítě skončilo, a nabídne návrat přesně tam. Hotovou lekci jde
   zopakovat i po částech, stačí kliknout na jedno cvičení.

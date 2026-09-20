@@ -125,6 +125,7 @@ export function dailyGoal(seconds, goalMinutes = DEFAULT_GOAL_MINUTES) {
   if (seconds >= target) {
     return {
       done: true,
+      left: 0,
       percent: 100,
       headline: `Dneska máš hotovo. U klávesnice to bylo ${minutesText(seconds)}.`,
       note: 'Kousek každý den je přesně to, co funguje. Můžeš skončit, nebo si ještě zacvičit, jak chceš.',
@@ -134,6 +135,7 @@ export function dailyGoal(seconds, goalMinutes = DEFAULT_GOAL_MINUTES) {
   if (seconds === 0) {
     return {
       done: false,
+      left: goalMinutes,
       percent: 0,
       headline: `Dneska tě ${minutesPhrase(goalMinutes, 'čeká', 'čekají')} cvičení.`,
       note: 'Nespěchej. Jde o to psát správným prstem, ne rychle.',
@@ -143,6 +145,7 @@ export function dailyGoal(seconds, goalMinutes = DEFAULT_GOAL_MINUTES) {
   const left = Math.max(1, Math.ceil((target - seconds) / 60));
   return {
     done: false,
+    left,
     percent: Math.min(100, Math.round((seconds / target) * 100)),
     headline: `Dneska ti ${minutesPhrase(left, 'zbývá', 'zbývají')}.`,
     note: `Zatím máš za sebou ${minutesText(seconds)}.`,
