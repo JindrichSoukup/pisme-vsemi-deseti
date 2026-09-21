@@ -4,6 +4,45 @@ Verze se značí podle [semver](https://semver.org): první číslo se zvedne p�
 velké změně, druhé při nové funkci, třetí při opravě. K téhle verzi patří
 i vydání na GitHubu se stejným popisem.
 
+## 1.3.0
+
+### Nové
+
+- **Volba „Všechno otevřené“ v nastavení pro rodiče.** Odemkne celou osnovu
+  a zapne Backspace od první lekce. Je na vyzkoušení programu a pro dospělého,
+  který si psaní opakuje. Dítě ji nevidí ani nemůže přepnout. Co se v tomhle
+  režimu odcvičí, se počítá do pokroku, takže na zkoušení je lepší vlastní
+  profil.
+
+### Opravy
+
+- **Pobídka po cvičení počítá s dnešním cílem.** Dřív slibovala celý zbytek
+  lekce („Zvládneš ještě čtyři cvičení? Je to tak na 15 minut.“) i pár minut
+  před splněním cíle. Teď řekne, kolik minut do cíle zbývá (zaokrouhleno
+  nahoru) a kolik cvičení se do nich vejde: „Ještě ti zbývá 6 minut do dnešního
+  cíle, to je tak na tři cvičení. Myslíš, že to zvládneš?“ Když dřív skončí
+  lekce než cíl, mluví se o jejím zbytku, ať čísla sedí s tím, co dítě čeká.
+- **Zamíchané skupinky zaplní celé cvičení.** Devatenáct cvičení v osnově
+  vycházelo kratších, než si lekce řekla, typicky na polovinu a někde jen na
+  jediný řádek: generátor losoval naslepo a skupinky bez nového písmene
+  zahazoval. Nácvik nových kláves tím byl o poznání kratší, než měl být.
+- **Souběžné zápisy do profilu se nepřepíšou.** Profil se ukládá jako celý
+  soubor a dva požadavky ve stejnou chvíli si navzájem zahodily práci, včetně
+  hvězdiček a času do dnešního cíle. Nejčastěji na konci lekce a ve chvíli,
+  kdy rodič měnil nastavení, zatímco dítě psalo.
+- **Odhlášení uprostřed lekce neztratí hotová cvičení.** Kliknutí na vlastní
+  jméno v liště zapomnělo profil dřív, než se rozdělaná lekce stihla uložit.
+- **Smazaný profil vezme s sebou i záznam úhozů.** Soubor
+  `<profil>.keys.jsonl` zůstával ležet, a protože se id tvoří ze jména, další
+  profil se stejným jménem do něj začal dopisovat.
+- **Čeština v hláškách o minutách.** „Je to tak na 1 minutu“ a „máš za sebou
+  1 minutu“ místo prvního pádu.
+
+### Aktualizace z předchozí verze
+
+Program je potřeba zavřít a spustit znovu přes `start.bat`. Dosavadní pokrok
+zůstává, lekce si drží svá id.
+
 ## 1.2.0
 
 ### Osnova
@@ -28,9 +67,6 @@ i vydání na GitHubu se stejným popisem.
 - **Po splnění dnešního cíle program radí odpočinek.** Místo „Zvládneš ještě
   dvě cvičení?“ řekne, že cíl je splněný a že je lepší si teď odpočinout.
   Hlavní tlačítko je Konec pro dnešek.
-- **Volba „Všechno otevřené“ v nastavení pro rodiče.** Odemkne celou osnovu
-  a zapne Backspace od první lekce. Je na vyzkoušení programu a pro dospělého,
-  který si psaní opakuje. Dítě ji nevidí ani nemůže přepnout.
 - **Rodič může zajistit obrázek po příští lekci.** Po předání se volba sama
   vypne a dítě o ní dopředu neví, takže odměna zůstává překvapením.
 - **Klávesy, které dřou, jde seřadit** celkově, podle chybovosti nebo podle
@@ -42,12 +78,6 @@ i vydání na GitHubu se stejným popisem.
 
 ### Opravy
 
-- **Pobídka po cvičení počítá s dnešním cílem.** Dřív slibovala celý zbytek
-  lekce („Zvládneš ještě čtyři cvičení? Je to tak na 15 minut.“) i pár minut
-  před splněním cíle. Teď řekne, kolik minut do cíle zbývá (zaokrouhleno
-  nahoru) a kolik cvičení se do nich vejde: „Ještě ti zbývá 6 minut do dnešního
-  cíle, to je tak na tři cvičení. Myslíš, že to zvládneš?“ Když dřív skončí
-  lekce než cíl, mluví se o jejím zbytku, ať čísla sedí s tím, co dítě čeká.
 - **Přerušená lekce se ukládá.** Hotová cvičení se dřív zahodila, takže se
   nezapočítal čas do dnešního cíle ani statistika kláves.
 - **Dokončení přerušené lekce dá hvězdičky.** Pokračování od prostředního
