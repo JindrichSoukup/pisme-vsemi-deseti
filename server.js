@@ -130,6 +130,41 @@ async function writeProfile(profile) {
   await fsp.rename(tmp, p);
 }
 
+/**
+ * Změny jednoho profilu jdou za sebou a každá si profil načte znovu.
+ *
+ * Profil se ukládá jako celý soubor, takže dva požadavky, které dorazí ve
+ * stejnou chvíli, si přepíšou práci: zápis, který načetl profil dřív, vrátí
+ * na disk starou podobu i s chybějícími hvězdičkami. Dítě píše a rodič mu
+ * zároveň mění nastavení, program posílá poznámku o rozdělané lekci hned po
+ * výsledku — je to tedy souběh na jeden soubor a patří sem zámek, ne
+ * opatrnost na straně prohlížeče.
+ *
+ * Vrací profil po změně, nebo null, když profil mezitím zmizel.
+ */
+const profileWrites = new Map();
+
+/** Zařadí práci s profilem do fronty. Smazání patří do stejné řady jako zápis. */
+function queueProfile(id, task) {
+  const prev = profileWrites.get(id) || Promise.resolve();
+  const next = prev.then(task, task);
+  // fronta nesmí uváznout na chybě, proto se drží její uklidněná podoba
+  profileWrites.set(id, next.then(() => {}, () => {}));
+  return next;
+}
+
+function changeProfile(id, change, afterWrite) {
+  return queueProfile(id, async () => {
+    const fresh = await readProfile(id);
+    if (!fresh) return null;
+    await change(fresh);
+    await writeProfile(fresh);
+    // co patří k uloženému profilu, ale nepíše se do něj, běží ještě ve frontě
+    if (afterWrite) await afterWrite(fresh);
+    return fresh;
+  });
+}
+
 async function listProfiles() {
   const files = await fsp.readdir(DATA_DIR).catch(() => []);
   const out = [];
@@ -475,31 +510,40 @@ async function handleApi(req, res, url) {
 
     if (parts[3] === 'result' && method === 'POST') {
       const body = await readBody(req);
-      const attempt = applyResult(profile, body);
-      await writeProfile(profile);
-      // syrový záznam jde stranou, výsledek se kvůli němu nesmí zdržet
-      appendStrokes(profile, body).catch((err) => log('záznam úhozů selhal:', err.message));
-      return sendJson(res, 200, { attempt, profile });
+      let attempt = null;
+      // Syrový záznam se dopisuje až za uloženým výsledkem, a pořád ve frontě.
+      // Ve frontě proto, že by jinak mohl dopadnout až za smazáním profilu a
+      // soubor s každým napsaným znakem by v datech zůstal bez profilu. Až za
+      // zápisem proto, že po neuloženém výsledku pošle klient všechno znovu a
+      // záznam by v souboru byl dvakrát.
+      const saved = await changeProfile(
+        id,
+        (p) => { attempt = applyResult(p, body); },
+        (p) => appendStrokes(p, body).catch((err) => log('záznam úhozů selhal:', err.message)),
+      );
+      if (!saved) return sendJson(res, 404, { error: 'Profil nenalezen.' });
+      return sendJson(res, 200, { attempt, profile: saved });
     }
 
     if (parts[3] === 'settings' && method === 'PATCH') {
       const body = await readBody(req);
-      profile.settings = { ...profile.settings, ...body };
-      await writeProfile(profile);
-      return sendJson(res, 200, profile);
+      const saved = await changeProfile(id, (p) => { p.settings = { ...p.settings, ...body }; });
+      if (!saved) return sendJson(res, 404, { error: 'Profil nenalezen.' });
+      return sendJson(res, 200, saved);
     }
 
     // kde dítě uprostřed lekce skončilo, ať se má kam vrátit
     if (parts[3] === 'progress' && method === 'POST') {
       const body = await readBody(req);
       const lessonId = String(body.lessonId || '').slice(0, 32);
-      if (lessonId) {
-        const rec = profile.lessons[lessonId] || { stars: 0, bestCpm: 0, bestAccuracy: 0, attempts: [] };
+      if (!lessonId) return sendJson(res, 200, { ok: true });
+      const saved = await changeProfile(id, (p) => {
+        const rec = p.lessons[lessonId] || { stars: 0, bestCpm: 0, bestAccuracy: 0, attempts: [] };
         if (body.step === null || body.step === undefined) delete rec.lastStep;
         else rec.lastStep = Math.max(0, Math.min(50, Math.round(num(body.step))));
-        profile.lessons[lessonId] = rec;
-        await writeProfile(profile);
-      }
+        p.lessons[lessonId] = rec;
+      });
+      if (!saved) return sendJson(res, 404, { error: 'Profil nenalezen.' });
       return sendJson(res, 200, { ok: true });
     }
 
@@ -513,40 +557,45 @@ async function handleApi(req, res, url) {
       if (!(profile.kindStats || {})[kind]) {
         return sendJson(res, 400, { error: 'Tenhle druh cvičení dítě zatím nedělalo.' });
       }
-      profile.assignments = (profile.assignments || []).filter((a) => !a.doneAt || keepDone(a));
-      profile.assignments.push({
-        id: 'a' + Date.now().toString(36),
-        kind,
-        at: new Date().toISOString(),
-        doneAt: null,
-        // stav druhu v okamžiku zadání, aby šlo po cvičení porovnat před a po
-        before: snapshot(profile.kindStats[kind]),
+      const saved = await changeProfile(id, (p) => {
+        p.assignments = (p.assignments || []).filter((a) => !a.doneAt || keepDone(a));
+        p.assignments.push({
+          id: 'a' + Date.now().toString(36),
+          kind,
+          at: new Date().toISOString(),
+          doneAt: null,
+          // stav druhu v okamžiku zadání, aby šlo po cvičení porovnat před a po
+          before: snapshot(p.kindStats[kind]),
+        });
       });
-      await writeProfile(profile);
-      return sendJson(res, 200, profile);
+      if (!saved) return sendJson(res, 404, { error: 'Profil nenalezen.' });
+      return sendJson(res, 200, saved);
     }
 
     if (parts[3] === 'assignment' && method === 'DELETE') {
       const wanted = String(parts[4] || '');
-      profile.assignments = (profile.assignments || []).filter((a) => a.id !== wanted);
-      await writeProfile(profile);
-      return sendJson(res, 200, profile);
+      const saved = await changeProfile(id, (p) => {
+        p.assignments = (p.assignments || []).filter((a) => a.id !== wanted);
+      });
+      if (!saved) return sendJson(res, 404, { error: 'Profil nenalezen.' });
+      return sendJson(res, 200, saved);
     }
 
     if (parts[3] === 'sticker' && method === 'POST') {
       const body = await readBody(req);
       const stickerId = String(body.stickerId || '').slice(0, 40);
-      if (stickerId && !profile.stickers.some((s) => s.id === stickerId)) {
-        profile.stickers.push({
+      const saved = await changeProfile(id, (p) => {
+        if (!stickerId || p.stickers.some((s) => s.id === stickerId)) return;
+        p.stickers.push({
           id: stickerId,
           earnedAt: new Date().toISOString(),
           lessonId: String(body.lessonId || '').slice(0, 32),
         });
         // obrázek zajištěný rodičem je předaný, příště se zase losuje
-        if (profile.settings) profile.settings.guaranteeSticker = false;
-        await writeProfile(profile);
-      }
-      return sendJson(res, 200, { stickers: profile.stickers });
+        if (p.settings) p.settings.guaranteeSticker = false;
+      });
+      if (!saved) return sendJson(res, 404, { error: 'Profil nenalezen.' });
+      return sendJson(res, 200, { stickers: saved.stickers });
     }
 
     if (parts.length === 3 && method === 'DELETE') {
@@ -555,17 +604,24 @@ async function handleApi(req, res, url) {
       // stejného jména zdědilo další dítě, protože id se tvoří ze jména.
       // Maže se proto první: když se to nepovede, profil zůstane a rodič to
       // pozná, místo aby mu záznam nepozorovaně zůstal ležet v datech.
-      try {
-        await fsp.unlink(strokesPath(id));
-      } catch (err) {
-        if (err.code !== 'ENOENT') {
-          log('záznam úhozů se nepodařilo smazat:', err.message);
-          return sendJson(res, 500, {
-            error: 'Záznam úhozů se nepodařilo smazat, profil proto zůstal. Zkus to prosím znovu.',
-          });
+      // Celé to jde frontou, aby rozepsaný zápis smazaný profil nevzkřísil.
+      const failed = await queueProfile(id, async () => {
+        try {
+          await fsp.unlink(strokesPath(id));
+        } catch (err) {
+          if (err.code !== 'ENOENT') return err.message;
         }
+        await fsp.unlink(userPath(id)).catch((err) => {
+          if (err.code !== 'ENOENT') throw err;
+        });
+        return null;
+      });
+      if (failed) {
+        log('záznam úhozů se nepodařilo smazat:', failed);
+        return sendJson(res, 500, {
+          error: 'Záznam úhozů se nepodařilo smazat, profil proto zůstal. Zkus to prosím znovu.',
+        });
       }
-      await fsp.unlink(userPath(id));
       return sendJson(res, 200, { ok: true });
     }
   }
