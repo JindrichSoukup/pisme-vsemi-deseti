@@ -187,8 +187,9 @@ function openEverythingCard(s) {
       skákat rovnou na konkrétní lekci. Dítěti, které se učí poprvé, to nechte
       vypnuté: lekce na sebe navazují a mazání překlepů se schválně učí až
       v polovině kurzu. Co se v tomhle režimu odcvičí, se počítá do pokroku
-      jako každá jiná lekce, takže vzdálená lekce s hvězdičkou zůstane
-      odemčená i po vypnutí volby. Na zkoušení je proto lepší vlastní profil.
+      jako každá jiná lekce: za hvězdičku ve vzdálené lekci se odemknou i
+      všechny lekce před ní a po vypnutí volby už zamčené nebudou. Na
+      zkoušení je proto lepší vlastní profil.
     </p>
   </div>`;
 }
