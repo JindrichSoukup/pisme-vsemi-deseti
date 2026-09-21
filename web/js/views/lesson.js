@@ -42,13 +42,23 @@ export async function leave() {
   }
 }
 
-/** Uloží nebo smaže poznámku o rozdělané lekci. Výpadek spojení nevadí. */
-function rememberProgress(app, lessonId, step) {
+/** Poznámka o rozdělané lekci jen v profilu, který drží prohlížeč. */
+function rememberLocally(app, lessonId, step) {
   if (String(lessonId).startsWith('EXTRA-')) return;
   const rec = app.profile.lessons[lessonId] || {};
   if (step === null) delete rec.lastStep;
   else rec.lastStep = step;
   app.profile.lessons[lessonId] = rec;
+}
+
+/**
+ * Uloží nebo smaže poznámku o rozdělané lekci i na serveru. Výpadek spojení
+ * nevadí. Volat se smí jen tam, kde se zároveň neukládá výsledek: server
+ * přepisuje celý profil, takže dva zápisy naráz se navzájem přepíšou.
+ */
+function rememberProgress(app, lessonId, step) {
+  if (String(lessonId).startsWith('EXTRA-')) return;
+  rememberLocally(app, lessonId, step);
   api.saveProgress(app.profile.id, lessonId, step).catch(() => {});
 }
 
@@ -382,8 +392,12 @@ function finishStep(raw) {
   const { app, lesson } = session;
   session.collected.push({ ...raw, kind: lesson.steps[session.stepIdx].kind });
 
-  rememberProgress(app, lesson.id, session.stepIdx + 1);
   const isLast = session.stepIdx >= lesson.steps.length - 1;
+  // Kam se vracet, se ukládá po každém cvičení kromě posledního. Po něm lekce
+  // končí a poznámku smaže rovnou výsledek; samostatný zápis by doletěl na
+  // server ve stejnou chvíli jako výsledek a přepsal by ho.
+  if (isLast) rememberLocally(app, lesson.id, session.stepIdx + 1);
+  else rememberProgress(app, lesson.id, session.stepIdx + 1);
   const r = computeResult({ typed: raw.typed, errors: raw.errors, durationMs: raw.durationMs });
 
   if (isLast) return finishLesson();
@@ -523,12 +537,16 @@ function resultPayload(sess, partial) {
 async function finishLesson() {
   const { app, lesson, index } = session;
   session.finished = true;
-  rememberProgress(app, lesson.id, null);
+  // Lekce je dopsaná, není kam se vracet. Na server to jde spolu s výsledkem
+  // (resumeStep null), ne zvlášť: samostatný zápis by mohl dorazit až po
+  // výsledku a přepsat ho i s hvězdičkami a časem do dnešního cíle.
+  rememberLocally(app, lesson.id, null);
 
   // Opakování jen části lekce hvězdičky nepřidá. Pokračování v lekci, kterou
   // dítě minule přerušilo, ale ano: celou ji udělalo, jen na dvakrát.
   const partial = (session.startedAt || 0) > 0 && !session.resumed;
   const { result, body } = resultPayload(session, partial);
+  body.resumeStep = null;
   const previousBest = (app.profile.lessons[lesson.id] || {}).bestCpm || 0;
 
   // odměna se losuje ještě před uložením, ať se počítá se stavem před lekcí

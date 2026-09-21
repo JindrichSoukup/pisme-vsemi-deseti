@@ -1135,3 +1135,34 @@ test('klávesy, které dřou, jde seřadit podle chybovosti i podle reakce', () 
   assert.ok(!weakestKeys(many, 10, 20, 'errors').some((r) => r.char === 'slow'));
   assert.equal(weakestKeys(many, 10, 20, 'latency')[0].char, 'slow');
 });
+
+/* ------------------------------------------ zápis výsledku lekce na server */
+
+const { createRequire } = await import('node:module');
+const { applyResult, emptyProfile } = createRequire(import.meta.url)('../server.js');
+
+test('výsledek lekce si nese i to, kam se vracet', () => {
+  const profile = emptyProfile('zkouska', 'Zkouška');
+  const half = { lessonId: 'L01', typed: 50, errors: 1, keystrokes: 50, durationMs: 60000, stars: 2, partial: true, resumeStep: 3 };
+  applyResult(profile, half);
+  assert.equal(profile.lessons.L01.lastStep, 3, 'přerušená lekce si pamatuje, kde skončila');
+  assert.equal(profile.lessons.L01.stars, 0, 'za kus lekce hvězdičky nejsou');
+
+  // dopsaná lekce se posílá s resumeStep null, aby se poznámka smazala
+  // rovnou s výsledkem a nemusel se kvůli ní posílat druhý zápis profilu
+  applyResult(profile, { ...half, resumeStep: null });
+  assert.equal('lastStep' in profile.lessons.L01, false, 'dopsaná lekce už nemá kam pokračovat');
+
+  applyResult(profile, { ...half, lessonId: 'L02', resumeStep: 2 });
+  assert.equal(profile.lessons.L02.lastStep, 2);
+  applyResult(profile, { ...half, lessonId: 'L02', partial: false, stars: 3, resumeStep: null });
+  assert.equal(profile.lessons.L02.stars, 3, 'celá lekce dá hvězdičky');
+  assert.equal('lastStep' in profile.lessons.L02, false, 'a smaže i poznámku z minulého přerušení');
+});
+
+test('chybějící resumeStep nechá poznámku o rozdělané lekci být', () => {
+  const profile = emptyProfile('zkouska', 'Zkouška');
+  applyResult(profile, { lessonId: 'L01', typed: 10, errors: 0, keystrokes: 10, durationMs: 6000, stars: 1, partial: true, resumeStep: 2 });
+  applyResult(profile, { lessonId: 'L01', typed: 10, errors: 0, keystrokes: 10, durationMs: 6000, stars: 1, partial: true });
+  assert.equal(profile.lessons.L01.lastStep, 2, 'starší klient poznámku nepřepíše nulou');
+});

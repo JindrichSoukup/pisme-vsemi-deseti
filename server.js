@@ -291,8 +291,10 @@ function applyResult(profile, r) {
   if (rec.attempts.length > 20) rec.attempts = rec.attempts.slice(-20);
   // Přerušená lekce si pamatuje, kde pokračovat. Posílá se to spolu s výsledkem,
   // protože dva zápisy profilu hned po sobě by se navzájem přepsaly.
+  // null znamená, že se lekce dopsala do konce a vracet se není kam.
   if (attempt.partial && r.resumeStep !== undefined) {
-    rec.lastStep = Math.max(0, Math.min(50, Math.round(num(r.resumeStep))));
+    if (r.resumeStep === null) delete rec.lastStep;
+    else rec.lastStep = Math.max(0, Math.min(50, Math.round(num(r.resumeStep))));
   }
   if (!attempt.partial) {
     rec.stars = Math.max(rec.stars || 0, attempt.stars);
