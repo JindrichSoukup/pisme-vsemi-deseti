@@ -169,7 +169,9 @@ soubor `<profil>.keys.jsonl`, kam se přidává syrový záznam úhozů: co se p
 jak dlouho trvalo a co bylo špatně. Na obrazovce se nepoužívá, je to podklad
 pro pozdější rozbor. Jinou složku lze
 zvolit proměnnou prostředí `PSANI_DATA`, což se hodí při zkoušení. Zálohu uděláš tím,
-že tu složku zkopíruješ. Smazáním souboru se smaže profil i s historií.
+že tu složku zkopíruješ. Profil smazaný v programu s sebou vezme i svůj záznam
+úhozů; ručně je potřeba smazat oba soubory, samotné `<profil>.json` historii
+psaní nechá ležet dál.
 
 ## Vývoj
 

@@ -80,6 +80,12 @@ function userPath(id) {
   return path.join(DATA_DIR, id + '.json');
 }
 
+/** Syrový záznam úhozů patří k profilu a jde s ním i do koše. */
+function strokesPath(id) {
+  const p = userPath(id);
+  return p ? p.slice(0, -'.json'.length) + '.keys.jsonl' : null;
+}
+
 function emptyProfile(id, name) {
   return {
     id,
@@ -221,7 +227,8 @@ function applyRhythm(profile, rhythm) {
  */
 async function appendStrokes(profile, r) {
   if (!Array.isArray(r.strokes) || !r.strokes.length) return;
-  const file = path.join(DATA_DIR, profile.id + '.keys.jsonl');
+  const file = strokesPath(profile.id);
+  if (!file) return;
   const at = new Date().toISOString();
   const lines = r.strokes
     .filter((s) => s && typeof s.chars === 'string' && s.chars.length)
@@ -541,6 +548,21 @@ async function handleApi(req, res, url) {
     }
 
     if (parts.length === 3 && method === 'DELETE') {
+      // Záznam úhozů je to nejcitlivější, co v datech leží: každý napsaný
+      // znak i každý překlep. Musí zmizet s profilem, jinak by ho po zadání
+      // stejného jména zdědilo další dítě, protože id se tvoří ze jména.
+      // Maže se proto první: když se to nepovede, profil zůstane a rodič to
+      // pozná, místo aby mu záznam nepozorovaně zůstal ležet v datech.
+      try {
+        await fsp.unlink(strokesPath(id));
+      } catch (err) {
+        if (err.code !== 'ENOENT') {
+          log('záznam úhozů se nepodařilo smazat:', err.message);
+          return sendJson(res, 500, {
+            error: 'Záznam úhozů se nepodařilo smazat, profil proto zůstal. Zkus to prosím znovu.',
+          });
+        }
+      }
       await fsp.unlink(userPath(id));
       return sendJson(res, 200, { ok: true });
     }
