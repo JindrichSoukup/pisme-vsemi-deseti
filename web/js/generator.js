@@ -657,28 +657,34 @@ function buildTwisters(allowed, lines, layout = 'cs-qwertz', mode = 'words') {
  * Proto přichází až po předvídatelných vzorcích, ne místo nich.
  */
 function buildMixedKeys(newKeys, allowed, lines) {
-  // Skupinky se skládají jen z písmen, takže čárka ani tečka se do nich
-  // nedostanou. Kdyby se braly za nové, nevznikla by ani jedna skupinka.
-  const fresh = newKeys.filter((k) => k.length === 1 && /\p{L}/u.test(k));
+  // Skupinky se skládají jen z malých písmen, takže čárka, tečka ani velké
+  // písmeno se do nich nedostanou. Nová písmena se proto berou jen ta, která
+  // v tom výběru opravdu jsou; jinak by se nová klávesa nedala zdůraznit.
   const pool = [...allowed].filter((c) => c !== ' ' && /\p{L}/u.test(c) && c === c.toLowerCase());
   if (pool.length < 2) return buildLetters(newKeys, lines, allowed, 1);
+  const fresh = newKeys.filter((k) => k.length === 1 && pool.includes(k));
 
   const weight = (c) => (fresh.includes(c) ? 3 : 1);
   const groups = [];
-  for (let i = 0; i < 120; i++) {
+  // Kolik skupinek je potřeba, aby se řádky doopravdy zaplnily. Nejkratší
+  // skupinka jsou dva znaky a mezera, podle toho se počítá a ještě se přidá.
+  const needed = lines * Math.ceil(DRILL_WIDTH / 3) + PER_LINE;
+  for (let i = 0; i < needed * 4 && groups.length < needed; i++) {
     const len = 2 + Math.floor(Math.random() * 2);
+    // Jedno místo ve skupince patří novému písmenu. Dřív se skupinky losovaly
+    // naslepo a ty bez nového písmene se zahazovaly; u lekce s jediným novým
+    // písmenem jich propadla většina a cvičení vyšlo poloviční.
+    const mustFresh = fresh.length ? Math.floor(Math.random() * len) : -1;
     let g = '';
     for (let k = 0; k < len; k++) {
-      let ch = weightedPick(pool, weight);
-      // stejné písmeno třikrát po sobě už bylo v prvním cvičení
-      let guard = 0;
-      while (g.length >= 2 && ch === g[g.length - 1] && ch === g[g.length - 2] && guard++ < 5) {
-        ch = weightedPick(pool, weight);
-      }
-      g += ch;
+      g += k === mustFresh
+        ? fresh[Math.floor(Math.random() * fresh.length)]
+        : weightedPick(pool, weight);
     }
-    // skupinka má obsahovat aspoň jedno nové písmeno, jinak se nic nenacvičí
-    if (fresh.length && ![...g].some((c) => fresh.includes(c))) continue;
+    // Stejné písmeno třikrát po sobě už bylo v prvním cvičení. Skupinka se
+    // zahodí a losuje se znovu: na vynuceném místě není co přebrat, u lekce
+    // s jediným novým písmenem by jinak vznikalo "eee".
+    if (/(.)\1\1/u.test(g)) continue;
     if (g !== groups[groups.length - 1]) groups.push(g);
   }
   return packLines(groups, lines, DRILL_WIDTH);

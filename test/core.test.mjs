@@ -388,6 +388,42 @@ test('nácvikové řádky se v rámci lekce neopakují', () => {
   }
 });
 
+test('cvičení má tolik řádků, kolik si lekce řekla', () => {
+  const chybi = [];
+  LESSONS.forEach((lesson, i) => {
+    const ctx = { allowed: allowedCharsUpTo(i), keyStats: {}, uppercase: knowsUppercase(i) };
+    lesson.steps.forEach((stepDef, si) => {
+      const want = stepDef.lines || 3;
+      for (let round = 0; round < 8; round++) {
+        const got = buildStep(lesson, stepDef, ctx, si).lines.length;
+        if (got < want) chybi.push(`${lesson.id}/${stepDef.kind}: ${got} místo ${want}`);
+      }
+    });
+  });
+  assert.deepEqual([...new Set(chybi)], [], 'krátké cvičení je kratší nácvik, než jaký lekce plánovala');
+});
+
+test('v zamíchaných skupinkách je vždycky nové písmeno', () => {
+  LESSONS.forEach((lesson, i) => {
+    const at = lesson.steps.findIndex((s) => s.kind === 'mixedkeys');
+    if (at < 0) return;
+    const allowed = allowedCharsUpTo(i);
+    // stejný výběr jako v generátoru: jen malá písmena, ne čárka nebo tečka
+    const letters = (chars) => [...chars].filter((c) => /\p{L}/u.test(c) && c === c.toLowerCase());
+    const pool = letters([...allowed].filter((c) => c !== ' '));
+    const fresh = lesson.newKeys.filter((k) => k.length === 1 && pool.includes(k));
+    // s jedním písmenem na výběr generátor skládá skupinky jinak
+    if (!fresh.length || pool.length < 2) return;
+    const ctx = { allowed, keyStats: {}, uppercase: knowsUppercase(i) };
+    for (const line of buildStep(lesson, lesson.steps[at], ctx, at).lines) {
+      for (const group of line.split(' ')) {
+        assert.ok([...group].some((c) => fresh.includes(c)),
+          `${lesson.id}: skupinka "${group}" necvičí žádné z nových písmen ${fresh.join('')}`);
+      }
+    }
+  });
+});
+
 test('řádky jsou dost dlouhé, ale vejdou se na obrazovku', () => {
   let longest = 0;
   LESSONS.forEach((lesson, i) => {
@@ -1165,4 +1201,17 @@ test('chybějící resumeStep nechá poznámku o rozdělané lekci být', () => 
   applyResult(profile, { lessonId: 'L01', typed: 10, errors: 0, keystrokes: 10, durationMs: 6000, stars: 1, partial: true, resumeStep: 2 });
   applyResult(profile, { lessonId: 'L01', typed: 10, errors: 0, keystrokes: 10, durationMs: 6000, stars: 1, partial: true });
   assert.equal(profile.lessons.L01.lastStep, 2, 'starší klient poznámku nepřepíše nulou');
+});
+
+test('v zamíchaných skupinkách není písmeno třikrát po sobě', () => {
+  LESSONS.forEach((lesson, i) => {
+    const at = lesson.steps.findIndex((s) => s.kind === 'mixedkeys');
+    if (at < 0) return;
+    const ctx = { allowed: allowedCharsUpTo(i), keyStats: {}, uppercase: knowsUppercase(i) };
+    for (let round = 0; round < 8; round++) {
+      for (const group of buildStep(lesson, lesson.steps[at], ctx, at).lines.join(' ').split(' ')) {
+        assert.doesNotMatch(group, /(.)\1\1/u, `${lesson.id}: "${group}" je jedno písmeno třikrát po sobě`);
+      }
+    }
+  });
 });
