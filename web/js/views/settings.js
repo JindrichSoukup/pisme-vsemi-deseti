@@ -71,7 +71,7 @@ export async function render(app) {
           Backspace je v prvních lekcích schválně vypnutý. Chyby se neopravují, jen se
           píše dál, aby se nácvik hmatu nepřerušoval. Zapne se v lekci
           <b>Backspace: mazání překlepů</b> a od té chvíle už funguje všude.${app.isParentView
-    ? ' Obojí jde obejít níž v <b>Všechno otevřené</b>.' : ''}
+    ? ' Obojí jde obejít níž ve volbě <b>Všechno otevřené</b>.' : ''}
         </p>
       </div>
 
@@ -186,7 +186,9 @@ function openEverythingCard(s) {
       Pro vyzkoušení programu nebo pro dospělého, který si psaní opakuje a chce
       skákat rovnou na konkrétní lekci. Dítěti, které se učí poprvé, to nechte
       vypnuté: lekce na sebe navazují a mazání překlepů se schválně učí až
-      v polovině kurzu. Hvězdičky ani statistiky se tím nemění.
+      v polovině kurzu. Co se v tomhle režimu odcvičí, se počítá do pokroku
+      jako každá jiná lekce, takže vzdálená lekce s hvězdičkou zůstane
+      odemčená i po vypnutí volby. Na zkoušení je proto lepší vlastní profil.
     </p>
   </div>`;
 }
