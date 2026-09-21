@@ -62,10 +62,20 @@ export const app = {
     await this.go('home');
   },
 
-  signOut() {
-    this.profile = null;
-    lastUser.clear();
-    this.go('profiles');
+  async signOut() {
+    // Napřed odejít z obrazovky, teprve pak zapomenout profil. Rozdělaná
+    // lekce se při odchodu ukládá, a to bez profilu nejde: dítě, které si
+    // uprostřed lekce klikne na svoje jméno, by o hotová cvičení přišlo.
+    try {
+      await this.go('profiles');
+    } finally {
+      // Odhlášení musí proběhnout, i když se seznam profilů nenačte:
+      // jinak by dítě zůstalo přihlášené a klikání na jméno by nic nedělalo.
+      this.profile = null;
+      lastUser.clear();
+      // lišta se jménem se schová, až když profil opravdu není
+      this.updateChrome();
+    }
   },
 
   error(message) {

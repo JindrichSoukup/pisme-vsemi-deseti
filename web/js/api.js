@@ -1,14 +1,24 @@
 /** Komunikace s lokálním serverem. Nic z toho neopouští tvůj počítač. */
 
-async function req(url, options) {
+/**
+ * Požadavek na server. timeoutMs ho po dané době utne: zaseknutý požadavek
+ * jinak drží frontu zápisů a s ní i obrazovku, která na ni čeká.
+ */
+async function req(url, options, timeoutMs = 0) {
+  // AbortSignal.timeout starší prohlížeč nezná; tam se prostě čeká dál
+  const stop = timeoutMs > 0 && AbortSignal.timeout ? AbortSignal.timeout(timeoutMs) : undefined;
   const res = await fetch(url, {
     headers: { 'content-type': 'application/json' },
+    signal: stop,
     ...options,
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || 'Nepovedlo se spojit s programem.');
   return data;
 }
+
+/** Kam se vracet v rozdělané lekci: drobnost, na kterou se nečeká dlouho. */
+export const PROGRESS_TIMEOUT = 3000;
 
 export const api = {
   listUsers: () => req('/api/users'),
@@ -23,7 +33,7 @@ export const api = {
     req(`/api/users/${id}/progress`, {
       method: 'POST',
       body: JSON.stringify({ lessonId, step }),
-    }),
+    }, PROGRESS_TIMEOUT),
   addSticker: (id, stickerId, lessonId) =>
     req(`/api/users/${id}/sticker`, {
       method: 'POST',

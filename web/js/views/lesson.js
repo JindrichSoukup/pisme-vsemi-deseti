@@ -9,7 +9,7 @@ import { renderHands, highlightFinger, handOf } from '../hands.js';
 import {
   computeResult, summarizeKeys, humanDuration, pct, recentSpeed, remainingWork, rhythmSummary,
 } from '../stats.js';
-import { api, saveResultSafe, saveStickerSafe } from '../api.js';
+import { api, saveResultSafe, saveStickerSafe, PROGRESS_TIMEOUT } from '../api.js';
 import { maybeAward, stickerSvg, printStickers } from '../stickers.js';
 import { esc, starsHtml, focusSoon, plural } from '../ui.js';
 import { dailyGoal } from './home.js';
@@ -29,7 +29,11 @@ export async function leave() {
   if (current.collected.length && !current.lesson.practice) {
     const { body } = resultPayload(current, true);
     body.resumeStep = current.betweenSteps ? current.stepIdx + 1 : current.stepIdx;
+    // kam se vracet, si výsledek nese sám, neodeslané poznámky jsou tím pádem
+    // jen starší podoba téhož
+    dropPendingProgress();
     try {
+      await progressSettled();
       const saved = await saveResultSafe(current.app.profile.id, body);
       current.app.profile = saved.profile;
     } catch {
@@ -39,6 +43,10 @@ export async function leave() {
   }
   if (current.engine && !current.lesson.practice) {
     rememberProgress(current.app, current.lesson.id, current.stepIdx);
+    // Úvodní stránka si hned načte profil ze serveru a přepíše si tím ten,
+    // co drží prohlížeč. Bez čekání by ho stáhla dřív, než tam poznámka
+    // dorazí, a tlačítko Pokračovat by se neukázalo.
+    await progressSettled();
   }
 }
 
@@ -52,14 +60,51 @@ function rememberLocally(app, lessonId, step) {
 }
 
 /**
- * Uloží nebo smaže poznámku o rozdělané lekci i na serveru. Výpadek spojení
- * nevadí. Volat se smí jen tam, kde se zároveň neukládá výsledek: server
- * přepisuje celý profil, takže dva zápisy naráz se navzájem přepíšou.
+ * Zápisy poznámky jdou za sebou, ne přes sebe: server přepisuje celý profil,
+ * takže dva zápisy naráz se navzájem přepíšou. Řetěz drží i ten požadavek,
+ * který se zasekl, aby se na něj dalo počkat před uložením výsledku.
+ */
+let pendingProgress = Promise.resolve();
+
+/**
+ * Poznámky z ukončené lekce se zahazují, viz dropPendingProgress. Každá si
+ * pamatuje, z jaké doby je, a ta z minula už se neodešle.
+ */
+let progressEpoch = 0;
+
+/**
+ * Počká, než se poznámka dopíše. Že se souběžné zápisy nepřepíšou, hlídá
+ * fronta na serveru; tohle čekání jen zařídí, že další obrazovka uvidí profil
+ * i s poznámkou. Čeká se nejdýl tak dlouho, jak dlouho smí trvat požadavek,
+ * aby se nečekalo míň, než kolik zápis potřebuje, a zároveň program neztuhl.
+ */
+function progressSettled(ms = PROGRESS_TIMEOUT) {
+  return Promise.race([pendingProgress, new Promise((r) => { setTimeout(r, ms); })]);
+}
+
+/**
+ * Lekce je dopsaná: poznámky, které ještě nestihly odejít, se zahodí. Jinak
+ * by se za výsledkem odeslala poznámka z prostředka lekce a program by pak
+ * nabízel Pokračovat v lekci, která je hotová.
+ */
+function dropPendingProgress() {
+  progressEpoch += 1;
+}
+
+/**
+ * Uloží poznámku o rozdělané lekci i na serveru, aby se dítě mělo kam vrátit,
+ * i kdyby program spadl nebo se zavřel prohlížeč. Výpadek spojení nevadí.
  */
 function rememberProgress(app, lessonId, step) {
   if (String(lessonId).startsWith('EXTRA-')) return;
   rememberLocally(app, lessonId, step);
-  api.saveProgress(app.profile.id, lessonId, step).catch(() => {});
+  // id se bere hned, ne až se na zápis dostane řada: do té doby může být
+  // přihlášené jiné dítě a poznámka by spadla do jeho profilu
+  const userId = app.profile.id;
+  const epoch = progressEpoch;
+  pendingProgress = pendingProgress
+    .then(() => (epoch === progressEpoch ? api.saveProgress(userId, lessonId, step) : null))
+    .catch(() => {});
 }
 
 export async function render(app, params) {
@@ -394,10 +439,8 @@ function finishStep(raw) {
 
   const isLast = session.stepIdx >= lesson.steps.length - 1;
   // Kam se vracet, se ukládá po každém cvičení kromě posledního. Po něm lekce
-  // končí a poznámku smaže rovnou výsledek; samostatný zápis by doletěl na
-  // server ve stejnou chvíli jako výsledek a přepsal by ho.
-  if (isLast) rememberLocally(app, lesson.id, session.stepIdx + 1);
-  else rememberProgress(app, lesson.id, session.stepIdx + 1);
+  // končí a poznámku smaže rovnou výsledek.
+  if (!isLast) rememberProgress(app, lesson.id, session.stepIdx + 1);
   const r = computeResult({ typed: raw.typed, errors: raw.errors, durationMs: raw.durationMs });
 
   if (isLast) return finishLesson();
@@ -541,6 +584,7 @@ async function finishLesson() {
   // (resumeStep null), ne zvlášť: samostatný zápis by mohl dorazit až po
   // výsledku a přepsat ho i s hvězdičkami a časem do dnešního cíle.
   rememberLocally(app, lesson.id, null);
+  dropPendingProgress();
 
   // Opakování jen části lekce hvězdičky nepřidá. Pokračování v lekci, kterou
   // dítě minule přerušilo, ale ano: celou ji udělalo, jen na dvakrát.
@@ -555,6 +599,7 @@ async function finishLesson() {
 
   let saveError = null;
   try {
+    await progressSettled();
     const saved = await saveResultSafe(app.profile.id, body);
     app.profile = saved.profile;
     if (award) {
