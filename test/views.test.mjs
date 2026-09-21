@@ -229,6 +229,16 @@ test('když dřív skončí lekce, mluví se o zbytku lekce', () => {
     /^Zbývá poslední cvičení, tak na 5 minut\.$/,
     'u posledního cvičení se říká, jak dlouhé je doopravdy',
   );
+  assert.match(
+    remainingText({ steps: 2, minutes: 1, goalLeft: 20 }),
+    /je to tak na 1 minutu\. /,
+    'po předložce na je čtvrtý pád, ne "na 1 minuta"',
+  );
+  assert.doesNotMatch(
+    [1, 2, 3, 5, 8].map((m) => remainingText({ steps: 2, minutes: m, goalLeft: 30 })).join(' '),
+    /na \d+ minuta\b/,
+    'první pád se za "na" nesmí objevit u žádného počtu',
+  );
   assert.match(remainingText({ steps: 0, minutes: 0, goalLeft: 3 }), /všechno/);
 });
 
@@ -327,6 +337,9 @@ test('skloňování minut sedí', () => {
   assert.match(dailyGoal(9 * 60, 10).headline, /zbývá 1 minuta/);
   assert.match(dailyGoal(0, 5).headline, /čeká 5 minut/);
   assert.match(dailyGoal(0, 2).headline, /čekají 2 minuty/);
+  assert.match(dailyGoal(60, 10).note, /za sebou 1 minutu\./, 'mít za sebou chce čtvrtý pád');
+  assert.match(dailyGoal(10 * 60, 10).headline, /to bylo 10 minut\./);
+  assert.match(dailyGoal(60, 1).headline, /to bylo 1 minuta\./, 'po slovesu být zůstává první pád');
 });
 
 test('u prázdného profilu se nic nerozbije', async () => {

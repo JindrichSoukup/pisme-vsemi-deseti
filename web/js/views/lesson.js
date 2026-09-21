@@ -350,8 +350,9 @@ export function remainingText({ steps, minutes, goalLeft }) {
     if (steps === 1) {
       return `Zbývá poslední cvičení, tak na ${lessonMinutes} ${plural(lessonMinutes, 'minutu', 'minuty', 'minut')}.`;
     }
+    // po předložce "na" je čtvrtý pád: na 1 minutu, na 2 minuty, na 5 minut
     return `${agree(steps, 'Zbývá', 'Zbývají')} ti ${words(steps)} cvičení,`
-      + ` je to tak na ${lessonMinutes} ${plural(lessonMinutes, 'minuta', 'minuty', 'minut')}.`
+      + ` je to tak na ${lessonMinutes} ${plural(lessonMinutes, 'minutu', 'minuty', 'minut')}.`
       + ' Myslíš, že to zvládneš?';
   }
 

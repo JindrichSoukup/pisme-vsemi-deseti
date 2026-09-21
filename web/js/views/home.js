@@ -148,7 +148,7 @@ export function dailyGoal(seconds, goalMinutes = DEFAULT_GOAL_MINUTES) {
     left,
     percent: Math.min(100, Math.round((seconds / target) * 100)),
     headline: `Dneska ti ${minutesPhrase(left, 'zbývá', 'zbývají')}.`,
-    note: `Zatím máš za sebou ${minutesText(seconds)}.`,
+    note: `Zatím máš za sebou ${minutesText(seconds, 'akuzativ')}.`,
   };
 }
 
@@ -161,14 +161,20 @@ function minutesPhrase(n, verbSingular, verbPlural) {
   return `${verb} ${n} ${minutesWord(n)}`;
 }
 
-function minutesWord(n) {
-  return plural(n, 'minuta', 'minuty', 'minut');
+function minutesWord(n, pad = 'nominativ') {
+  return pad === 'akuzativ'
+    ? plural(n, 'minutu', 'minuty', 'minut')
+    : plural(n, 'minuta', 'minuty', 'minut');
 }
 
-/** Sekundy jako "6 minut". Míň než minuta se zaokrouhlí nahoru na jednu. */
-function minutesText(seconds) {
+/**
+ * Sekundy jako "6 minut". Míň než minuta se zaokrouhlí nahoru na jednu.
+ * Pád se liší podle věty: "to bylo 1 minuta", ale "máš za sebou 1 minutu".
+ * U dvou a víc minut je tvar stejný, takže je vidět jen u jedné.
+ */
+function minutesText(seconds, pad) {
   const n = Math.max(1, Math.round(seconds / 60));
-  return `${n} ${minutesWord(n)}`;
+  return `${n} ${minutesWord(n, pad)}`;
 }
 
 /**
