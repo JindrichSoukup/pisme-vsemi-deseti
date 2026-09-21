@@ -332,28 +332,47 @@ export function hintText(ch, info, composing = false) {
 
 /**
  * Kolik ještě zbývá, řečeno tak, aby to dítě povzbudilo a ne odradilo.
- * Na prvním místě je čas do dnešního cíle (zaokrouhlený nahoru), ne zbytek
- * lekce: dítě se má řídit tím, co si s rodičem nastavili, jinak by ho program
- * pobízel k dalším cvičením i pár minut před koncem. Počet cvičení je jen
- * odhad, kolik se jich do zbývajícího času vejde, a nikdy jich není víc,
- * než kolik jich v lekci doopravdy zbývá.
+ * Měří se tím, co skončí dřív. Obvykle je to dnešní cíl: řekne se, kolik
+ * minut do něj zbývá (zaokrouhleno nahoru) a kolik cvičení se do nich zhruba
+ * vejde, jinak by program pobízel k další čtvrthodině i minutu před cílem.
+ * Když dřív skončí lekce, mluví se o jejím zbytku, aby čísla na obrazovce
+ * odpovídala tomu, co dítě doopravdy čeká.
  * Ptáme se, jestli to ještě zvládne, protože rozhodnutí má zůstat na něm.
  */
 export function remainingText({ steps, minutes, goalLeft }) {
   if (steps <= 0) return 'A to je z téhle lekce všechno.';
   const lessonMinutes = Math.max(1, Math.ceil(minutes));
-  const left = Math.min(lessonMinutes, Math.max(1, Math.ceil(goalLeft ?? lessonMinutes)));
-  const minut = plural(left, 'minuta', 'minuty', 'minut');
+  const toGoal = Math.max(1, Math.ceil(goalLeft ?? lessonMinutes));
 
-  if (steps === 1) {
-    return `Zbývá poslední cvičení, tak na ${left} ${plural(left, 'minutu', 'minuty', 'minut')}.`;
+  // Lekce skončí dřív než dnešní cíl. Pak se mluví o zbytku lekce, protože
+  // slibovat čas do cíle by znamenalo slibovat cvičení, která už nejsou.
+  if (toGoal >= lessonMinutes) {
+    if (steps === 1) {
+      return `Zbývá poslední cvičení, tak na ${lessonMinutes} ${plural(lessonMinutes, 'minutu', 'minuty', 'minut')}.`;
+    }
+    return `${agree(steps, 'Zbývá', 'Zbývají')} ti ${words(steps)} cvičení,`
+      + ` je to tak na ${lessonMinutes} ${plural(lessonMinutes, 'minuta', 'minuty', 'minut')}.`
+      + ' Myslíš, že to zvládneš?';
   }
+
   const perStep = minutes / steps;
-  const howMany = Math.min(steps, Math.max(1, Math.round(left / perStep)));
-  const kolik = ['', 'jedno', 'dvě', 'tři', 'čtyři', 'pět', 'šest', 'sedm'][howMany] || String(howMany);
-  const zbyva = left >= 2 && left <= 4 ? 'zbývají' : 'zbývá';
-  return `Ještě ti ${zbyva} ${left} ${minut}, to je tak na ${kolik} cvičení.`
-    + ' Myslíš, že to zvládneš?';
+  const howMany = Math.min(steps, Math.max(1, Math.round(toGoal / perStep)));
+  const start = `Ještě ti ${agree(toGoal, 'zbývá', 'zbývají')} ${toGoal}`
+    + ` ${plural(toGoal, 'minuta', 'minuty', 'minut')} do dnešního cíle`;
+  // Jedno cvičení může trvat dýl, než kolik do cíle zbývá. Neslibuje se
+  // proto, že se do zbývajícího času vejde, jen že cíl zavře.
+  if (howMany === 1) return `${start}, stačí na to jedno cvičení. Myslíš, že to zvládneš?`;
+  return `${start}, to je tak na ${words(howMany)} cvičení. Myslíš, že to zvládneš?`;
+}
+
+/** Sloveso ke shodě s počtem: zbývá 1 minuta, zbývají 2 minuty, zbývá 5 minut. */
+function agree(n, singular, plural2to4) {
+  return n >= 2 && n <= 4 ? plural2to4 : singular;
+}
+
+/** Malý počet se dítěti píše slovem. */
+function words(n) {
+  return ['', 'jedno', 'dvě', 'tři', 'čtyři', 'pět', 'šest', 'sedm'][n] || String(n);
 }
 
 /* ------------------------------------------------- konec kroku a lekce */

@@ -189,29 +189,47 @@ test('odhad zbytku lekce počítá s tím, jak dítě píše', () => {
   assert.equal(remainingWork(lesson, 2, 60).steps, 0, 'na konci nezbývá nic');
 });
 
-test('zbytek se počítá do dnešního cíle, ne do konce lekce', () => {
+test('když dřív skončí dnešní cíl, mluví se o minutách do cíle', () => {
   assert.match(
     remainingText({ steps: 5, minutes: 15, goalLeft: 4 }),
-    /^Ještě ti zbývají 4 minuty, to je tak na jedno cvičení\. Myslíš, že to zvládneš\?$/,
+    /^Ještě ti zbývají 4 minuty do dnešního cíle, stačí na to jedno cvičení\. Myslíš, že to zvládneš\?$/,
     'čtyři minuty do cíle neznamenají pět cvičení za patnáct minut',
   );
   assert.match(
     remainingText({ steps: 6, minutes: 12, goalLeft: 6 }),
-    /^Ještě ti zbývá 6 minut, to je tak na tři cvičení\. Myslíš, že to zvládneš\?$/,
-  );
-  assert.match(
-    remainingText({ steps: 3, minutes: 6, goalLeft: 20 }),
-    /^Ještě ti zbývá 6 minut, to je tak na tři cvičení\./,
-    'víc času do cíle než lekce, tak se počítá zbytek lekce',
+    /^Ještě ti zbývá 6 minut do dnešního cíle, to je tak na tři cvičení\. Myslíš, že to zvládneš\?$/,
   );
   assert.match(
     remainingText({ steps: 4, minutes: 8, goalLeft: 2.2 }),
-    /^Ještě ti zbývají 3 minuty, to je tak na dvě cvičení\./,
+    /^Ještě ti zbývají 3 minuty do dnešního cíle, to je tak na dvě cvičení\./,
     'minuty do cíle se zaokrouhlují nahoru',
   );
-  assert.match(remainingText({ steps: 1, minutes: 4, goalLeft: 1 }), /^Zbývá poslední cvičení, tak na 1 minutu\.$/);
-  assert.match(remainingText({ steps: 0, minutes: 0, goalLeft: 3 }), /všechno/);
   assert.doesNotMatch(remainingText({ steps: 4, minutes: 12, goalLeft: 3 }), /čtyři cvičení/, 'nepobízí přes cíl');
+});
+
+test('delší cvičení, než kolik do cíle zbývá, se nevydává za kratší', () => {
+  const text = remainingText({ steps: 3, minutes: 12, goalLeft: 1 });
+  assert.match(text, /^Ještě ti zbývá 1 minuta do dnešního cíle, stačí na to jedno cvičení\./);
+  assert.doesNotMatch(text, /tak na jedno/, 'cvičení na čtyři minuty se neslíbí jako minutové');
+});
+
+test('když dřív skončí lekce, mluví se o zbytku lekce', () => {
+  assert.match(
+    remainingText({ steps: 3, minutes: 6, goalLeft: 20 }),
+    /^Zbývají ti tři cvičení, je to tak na 6 minut\. Myslíš, že to zvládneš\?$/,
+    'do cíle je daleko, ale slíbit jde jen to, co v lekci zbývá',
+  );
+  assert.match(
+    remainingText({ steps: 5, minutes: 10, goalLeft: 20 }),
+    /^Zbývá ti pět cvičení, je to tak na 10 minut\./,
+    'pět cvičení zbývá, ne zbývají',
+  );
+  assert.match(
+    remainingText({ steps: 1, minutes: 5, goalLeft: 20 }),
+    /^Zbývá poslední cvičení, tak na 5 minut\.$/,
+    'u posledního cvičení se říká, jak dlouhé je doopravdy',
+  );
+  assert.match(remainingText({ steps: 0, minutes: 0, goalLeft: 3 }), /všechno/);
 });
 
 /* -------------------------------------------------------------- oslovení */

@@ -38,7 +38,8 @@ Když je port obsazený, dá se zvolit jiný: `node server.js --port 7332`.
 - **Během lekce je vidět, kolik ještě zbývá do dnešního cíle.** Po každém
   cvičení se ukáže, kolik minut do cíle zbývá a kolik cvičení se do nich
   zhruba vejde, počítáno podle toho, jak dítě doopravdy píše. Přes cíl program
-  nepobízí. Vedle je tlačítko Konec pro dnešek.
+  nepobízí, a když skončí dřív lekce, mluví o jejím zbytku. Vedle je tlačítko
+  Konec pro dnešek.
 - **Lekci jde přerušit a vrátit se k ní.** Program si pamatuje, u kterého
   cvičení dítě skončilo, a nabídne návrat přesně tam. Hotovou lekci jde
   zopakovat i po částech, stačí kliknout na jedno cvičení.

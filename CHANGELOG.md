@@ -45,8 +45,9 @@ i vydání na GitHubu se stejným popisem.
 - **Pobídka po cvičení počítá s dnešním cílem.** Dřív slibovala celý zbytek
   lekce („Zvládneš ještě čtyři cvičení? Je to tak na 15 minut.“) i pár minut
   před splněním cíle. Teď řekne, kolik minut do cíle zbývá (zaokrouhleno
-  nahoru) a kolik cvičení se do nich vejde: „Ještě ti zbývají 4 minuty, to je
-  tak na jedno cvičení. Myslíš, že to zvládneš?“
+  nahoru) a kolik cvičení se do nich vejde: „Ještě ti zbývá 6 minut do dnešního
+  cíle, to je tak na tři cvičení. Myslíš, že to zvládneš?“ Když dřív skončí
+  lekce než cíl, mluví se o jejím zbytku, ať čísla sedí s tím, co dítě čeká.
 - **Přerušená lekce se ukládá.** Hotová cvičení se dřív zahodila, takže se
   nezapočítal čas do dnešního cíle ani statistika kláves.
 - **Dokončení přerušené lekce dá hvězdičky.** Pokračování od prostředního
