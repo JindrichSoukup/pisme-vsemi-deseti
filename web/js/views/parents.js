@@ -11,9 +11,7 @@ export async function render(app) {
   await app.refreshProfile();
   const p = app.profile;
 
-  const attempts = Object.entries(p.lessons)
-    .flatMap(([id, rec]) => (rec.attempts || []).map((a) => ({ ...a, lessonId: id })))
-    .sort((a, b) => new Date(a.at) - new Date(b.at));
+  const attempts = allAttempts(p);
 
   const dayKeys = Object.keys(p.days).sort();
   const totalSeconds = dayKeys.reduce((n, d) => n + (p.days[d].seconds || 0), 0);
@@ -37,15 +35,15 @@ export async function render(app) {
       </div>
 
       <div class="card">
-        <h2>Hvězdičky</h2>
-        ${starSummary(p)}
+        <h2>Lekce a cvičení navíc</h2>
+        ${attemptLog(attempts)}
       </div>
 
       <div class="card">
         <h2>Rychlost</h2>
-        <p class="muted small">Každý sloupec je jeden dokončený pokus o lekci, v úhozech za minutu.
-          Jakmile bude za sebou aspoň pět dní, proloží se tečkovaným trendem.</p>
-        ${barChart(attempts.map((a) => ({ value: a.netCpm, date: a.at, cls: a.partial ? 'bar--partial' : '' })),
+        <p class="muted small">Každý sloupec je jedna lekce nebo cvičení navíc, v úhozech za minutu.
+          Světlejší sloupec je jen část lekce, modrý cvičení navíc. Jakmile bude za sebou aspoň pět dní, proloží se tečkovaným trendem.</p>
+        ${barChart(attempts.map((a) => ({ value: a.netCpm, date: a.at, cls: barClass(a) })),
           { unit: 'ÚPM', title: 'rychlost po pokusech' })}
       </div>
 
@@ -54,7 +52,7 @@ export async function render(app) {
         <p class="muted small">Čárkované čáry jsou prahy hvězdiček: zdola 90 %, 95 % a 98 %.
           Osa začíná na padesáti procentech, jinak by ty tři čáry splynuly v jednu.
           Přesnost je důležitější než rychlost, takže tenhle graf má smysl sledovat jako první.</p>
-        ${barChart(attempts.map((a) => ({ value: a.accuracy * 100, date: a.at, cls: a.partial ? 'bar--partial' : '' })), {
+        ${barChart(attempts.map((a) => ({ value: a.accuracy * 100, date: a.at, cls: barClass(a) })), {
           unit: '%',
           max: 100,
           baseline: 50,
@@ -230,43 +228,62 @@ export function compareText(before, after) {
   return parts.length ? parts.join(', ') : 'beze změny';
 }
 
-/** Kolik hvězdiček dítě posbíralo a za co konkrétně. */
-function starSummary(profile) {
-  const rows = LESSONS
-    .map((lesson, i) => ({ lesson, order: i + 1, rec: (profile.lessons || {})[lesson.id] }))
-    .filter((r) => r.rec);
+/**
+ * Lekce i cvičení navíc v jedné řadě podle času. Každé opakování lekce
+ * je samostatný pokus, ať je vidět, jestli se to zlepšuje.
+ */
+function allAttempts(profile) {
+  const lessons = Object.entries(profile.lessons || {})
+    .flatMap(([id, rec]) => (rec.attempts || []).map((a) => ({ ...a, lessonId: id })));
+  const practice = (profile.practice || []).map((a) => ({ ...a, practice: true }));
+  return lessons.concat(practice).sort((a, b) => new Date(a.at) - new Date(b.at));
+}
 
-  if (!rows.length) {
-    return '<p class="muted small" style="margin:0">Zatím žádná dokončená lekce.</p>';
+function barClass(a) {
+  if (a.practice) return 'bar--practice';
+  return a.partial ? 'bar--partial' : '';
+}
+
+/** Kolik řádků je vidět hned, starší se schovají pod rozbalení. */
+const LOG_VISIBLE = 10;
+
+/**
+ * Záznam jednotlivých pokusů od nejnovějšího. Hvězdičky jsou až na konci,
+ * rodiči víc řekne přesnost a rychlost než odměna, kterou vidí dítě.
+ */
+function attemptLog(attempts) {
+  if (!attempts.length) {
+    return '<p class="muted small" style="margin:0">Zatím nic. Objeví se to po první lekci.</p>';
   }
+  const order = new Map(LESSONS.map((l, i) => [l.id, { lesson: l, n: i + 1 }]));
+  const head = `<tr><th>Kdy</th><th>Co</th><th>Přesnost</th><th>Rychlost</th><th>Chyb</th><th>Čas</th><th>Hvězdičky</th></tr>`;
+  const row = (a) => {
+    const info = order.get(a.lessonId);
+    const what = a.practice
+      ? `Cvičení navíc: ${esc(kindLabel(a.kind))}`
+      : info ? `${info.n}. ${esc(info.lesson.title)}` : esc(a.lessonId);
+    const note = a.practice ? '' : a.partial ? '<span class="muted">část lekce</span>' : starsHtml(a.stars || 0);
+    return `<tr>
+      <td class="muted">${esc(czDateTime(a.at))}</td>
+      <td>${what}</td>
+      <td>${pct(a.accuracy || 0)}</td>
+      <td>${a.netCpm || 0} ÚPM</td>
+      <td>${a.errors ?? ''}</td>
+      <td>${a.durationMs ? esc(humanDuration(Math.round(a.durationMs / 1000))) : ''}</td>
+      <td>${note}</td>
+    </tr>`;
+  };
+  const rows = attempts.slice().reverse();
+  const recent = rows.slice(0, LOG_VISIBLE);
+  const older = rows.slice(LOG_VISIBLE);
+  return `<table class="keys">${head}${recent.map(row).join('')}</table>
+    ${older.length ? `<details class="log-older"><summary class="small muted">Starší (${older.length})</summary>
+      <table class="keys">${head}${older.map(row).join('')}</table></details>` : ''}`;
+}
 
-  const earned = rows.reduce((n, r) => n + (r.rec.stars || 0), 0);
-  const possible = LESSONS.length * 3;
-  const byStars = [0, 0, 0, 0];
-  for (const r of rows) byStars[r.rec.stars || 0] += 1;
-
-  const table = `<table class="keys">
-    <tr><th>Lekce</th><th>Hvězdičky</th><th>Nejlepší rychlost</th><th>Cíl lekce</th><th>Nejlepší přesnost</th><th>Pokusů</th><th>Naposledy</th></tr>
-    ${rows.map((r) => `<tr>
-      <td>${r.order}. ${esc(r.lesson.title)}</td>
-      <td>${starsHtml(r.rec.stars || 0)}</td>
-      <td>${r.rec.bestCpm || 0} ÚPM</td>
-      <td class="muted">${r.lesson.targetCpm} ÚPM${(r.rec.bestCpm || 0) >= r.lesson.targetCpm ? ' ✓' : ''}</td>
-      <td>${pct(r.rec.bestAccuracy || 0)}</td>
-      <td>${(r.rec.attempts || []).length}</td>
-      <td>${esc(czDate(r.rec.lastAt))}</td>
-    </tr>`).join('')}
-  </table>`;
-
-  return `
-    <div class="metrics" style="margin-bottom:1rem">
-      <div class="metric"><b>${earned}</b><span>hvězdiček z ${possible} možných</span></div>
-      <div class="metric"><b>${byStars[3]}</b><span>${plural(byStars[3], 'lekce na tři', 'lekce na tři', 'lekcí na tři')}</span></div>
-      <div class="metric"><b>${byStars[2]}</b><span>${plural(byStars[2], 'lekce na dvě', 'lekce na dvě', 'lekcí na dvě')}</span></div>
-      <div class="metric"><b>${byStars[1]}</b><span>${plural(byStars[1], 'lekce na jednu', 'lekce na jednu', 'lekcí na jednu')}</span></div>
-      ${byStars[0] ? `<div class="metric"><b>${byStars[0]}</b><span>${plural(byStars[0], 'lekce bez hvězdičky', 'lekce bez hvězdičky', 'lekcí bez hvězdičky')}</span></div>` : ''}
-    </div>
-    ${table}`;
+function czDateTime(iso) {
+  const d = new Date(iso);
+  return `${czDate(iso)} ${d.toLocaleTimeString('cs-CZ', { hour: 'numeric', minute: '2-digit' })}`;
 }
 
 function dayTable(days) {

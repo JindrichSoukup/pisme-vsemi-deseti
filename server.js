@@ -107,6 +107,7 @@ function emptyProfile(id, name) {
     stickers: [], // { id, earnedAt, lessonId }
     days: {},     // 'YYYY-MM-DD' -> { seconds, keystrokes, errors }
     assignments: [], // cvičení navíc od rodiče: { id, kind, at, doneAt }
+    practice: [], // odevzdaná cvičení navíc: { at, kind, netCpm, accuracy, ... }
   };
 }
 
@@ -290,10 +291,12 @@ function applyResult(profile, r) {
   applyRhythm(profile, r.rhythm);
 
   // Cvičení navíc se do osnovy nezapisuje. Nemá hvězdičky ani rekord,
-  // jen se odškrtne jako hotové a započítá do dne a do druhů cvičení.
+  // odškrtne se jako hotové, započítá do dne a do druhů cvičení a zapíše
+  // do vlastního seznamu, ať ho rodič vidí v přehledu vedle lekcí.
   if (r.practice) {
     const attempt = {
       at: new Date().toISOString(),
+      kind: lessonId.replace(/^EXTRA-/, '').slice(0, 24),
       netCpm: num(r.netCpm),
       accuracy: num(r.accuracy),
       errors: num(r.errors),
@@ -302,6 +305,7 @@ function applyResult(profile, r) {
       practice: true,
     };
     closeAssignment(profile, String(r.assignmentId || ''), r.steps);
+    profile.practice = (profile.practice || []).concat(attempt).slice(-200);
     applyKeys(profile, r.keys);
     applyDay(profile, attempt);
     return attempt;

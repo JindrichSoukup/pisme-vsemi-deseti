@@ -35,19 +35,24 @@ async function renderParents(profile) {
   return root.innerHTML;
 }
 
-test('rodičovská stránka ukáže, kolik hvězdiček dítě má', async () => {
-  const html = await renderParents(sampleProfile());
-  assert.match(html, /hvězdiček z \d+ možných/, 'chybí souhrn hvězdiček');
-  assert.match(html, /<b>5<\/b>/, '3 + 2 + 0 = 5 hvězdiček');
-  assert.match(html, new RegExp(String(LESSONS.length * 3)), 'chybí maximum');
+test('rodičovská stránka vypíše každý pokus o lekci zvlášť', async () => {
+  const profile = sampleProfile();
+  profile.lessons.L01.attempts.unshift({ at: '2026-09-07T10:00:00.000Z', netCpm: 40, accuracy: 0.93, stars: 1 });
+  const html = await renderParents(profile);
+  assert.equal(html.split(LESSONS[0].title).length - 1, 2, 'opakování lekce má vlastní řádek');
+  assert.match(html, /52 ÚPM/);
+  assert.match(html, /40 ÚPM/);
+  assert.ok(html.includes('★<span class="off">☆☆</span>'), 'hvězdičky u pokusu zůstanou');
 });
 
-test('rodičovská stránka vypíše hvězdičky u jednotlivých lekcí', async () => {
-  const html = await renderParents(sampleProfile());
-  assert.ok(html.includes('★★★'), 'lekce na tři hvězdičky');
-  assert.ok(html.includes('★★<span class="off">☆</span>'), 'lekce na dvě hvězdičky');
-  assert.ok(html.includes(LESSONS[0].title), 'chybí název lekce');
-  assert.match(html, /52 ÚPM/, 'chybí nejlepší rychlost');
+test('rodičovská stránka ukáže cvičení navíc mezi lekcemi, nejnovější nahoře', async () => {
+  const profile = sampleProfile();
+  profile.practice = [{ at: '2026-09-11T10:00:00.000Z', kind: 'scales', netCpm: 28, accuracy: 0.99, errors: 2, durationMs: 714000 }];
+  const html = await renderParents(profile);
+  const extra = html.indexOf('Cvičení navíc: Vzory z kláves dokola');
+  assert.ok(extra > -1, 'chybí cvičení navíc');
+  assert.ok(extra < html.indexOf(LESSONS[2].title), 'nejnovější je nahoře');
+  assert.match(html, /bar--practice/, 'v grafu se cvičení navíc odliší');
 });
 
 /* ---------------------------------------------------- nápověda nad klávesnicí */
@@ -345,7 +350,7 @@ test('skloňování minut sedí', () => {
 test('u prázdného profilu se nic nerozbije', async () => {
   const empty = { ...sampleProfile(), lessons: {}, days: {}, keyStats: {} };
   const html = await renderParents(empty);
-  assert.match(html, /Zatím žádná dokončená lekce/);
+  assert.match(html, /Zatím nic. Objeví se to po první lekci/);
 });
 
 /* ------------------------------------------------ cvičení navíc od rodiče */

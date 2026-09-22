@@ -475,6 +475,8 @@ main.screen-lesson { max-width: 1180px; }
 .chart .bar { fill: var(--accent); }
 /* opakování jedné části lekce se kreslí světleji, není to celý pokus */
 .chart .bar--partial { fill: color-mix(in srgb, var(--accent) 40%, var(--card)); }
+/* cvičení navíc není lekce, v grafu se odliší barvou */
+.chart .bar--practice { fill: var(--f-pinky); }
 .chart .bar-value { fill: var(--muted); font-size: 10px; }
 
 /* prahy hvězdiček */
@@ -486,6 +488,8 @@ main.screen-lesson { max-width: 1180px; }
 
 table.keys { border-collapse: collapse; width: 100%; font-size: .92rem; }
 table.keys th, table.keys td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid var(--line); }
+.log-older { margin-top: .6rem; }
+.log-older > summary { cursor: pointer; }
 table.keys td.k { font-family: ui-monospace, Consolas, monospace; font-size: 1.05rem; }
 
 .notice {

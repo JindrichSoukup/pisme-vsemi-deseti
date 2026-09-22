@@ -1203,6 +1203,16 @@ test('chybějící resumeStep nechá poznámku o rozdělané lekci být', () => 
   assert.equal(profile.lessons.L01.lastStep, 2, 'starší klient poznámku nepřepíše nulou');
 });
 
+test('cvičení navíc se zapíše jako samostatný pokus, ne do osnovy', () => {
+  const profile = emptyProfile('zkouska', 'Zkouška');
+  delete profile.practice; // profil založený dřív, než se cvičení navíc ukládala
+  applyResult(profile, { lessonId: 'EXTRA-scales', practice: true, netCpm: 28, accuracy: 0.99, errors: 2, keystrokes: 390, durationMs: 714000 });
+  assert.deepEqual(Object.keys(profile.lessons), [], 'do lekcí nepatří');
+  assert.equal(profile.practice.length, 1);
+  assert.equal(profile.practice[0].kind, 'scales');
+  assert.equal(profile.practice[0].netCpm, 28);
+});
+
 test('v zamíchaných skupinkách není písmeno třikrát po sobě', () => {
   LESSONS.forEach((lesson, i) => {
     const at = lesson.steps.findIndex((s) => s.kind === 'mixedkeys');
