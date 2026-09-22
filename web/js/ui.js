@@ -73,9 +73,12 @@ export function barChart(points, opts = {}) {
 
   const maxValue = Math.max(...points.map((p) => p.value));
   const maxY = opts.max || Math.max(1, Math.ceil((maxValue * 1.15) / 10) * 10);
-  // Osa nemusí začínat v nule. U přesnosti by se prahy hvězdiček slily
-  // do jedné čáry, protože 90, 95 a 98 je na stupnici od nuly skoro totéž.
+  // Osa nemusí začínat v nule. U přesnosti by se všechny pokusy slily do
+  // jednoho pásu těsně pod stem, protože jedna chyba je desetina bodu.
   const baseY = Math.min(opts.baseline || 0, maxValue);
+  // Na úzké stupnici nestačí celá čísla: mezi 99,2 a 99,7 je rozdíl,
+  // který by se po zaokrouhlení ztratil.
+  const fmt = opts.format || ((v) => Math.round(v).toLocaleString('cs-CZ'));
   const yAt = (v) => pad.t + plotH - ((Math.min(v, maxY) - baseY) / (maxY - baseY)) * plotH;
 
   const slot = plotW / points.length;
@@ -87,13 +90,13 @@ export function barChart(points, opts = {}) {
       const value = baseY + (maxY - baseY) * f;
       const y = yAt(value);
       return `<line class="grid" x1="${pad.l}" y1="${y.toFixed(1)}" x2="${w - pad.r}" y2="${y.toFixed(1)}"/>
-              <text x="0" y="${(y + 3.5).toFixed(1)}">${Math.round(value)}</text>`;
+              <text x="0" y="${(y + 3.5).toFixed(1)}">${esc(fmt(value))}</text>`;
     })
     .join('');
 
   // vodorovné čáry pro prahy hvězdiček a podobně
   const guides = (opts.guides || [])
-    .filter((g) => g.y <= maxY)
+    .filter((g) => g.y <= maxY && g.y >= baseY)
     .map((g) => {
       const y = yAt(g.y);
       const label = g.label
@@ -106,7 +109,7 @@ export function barChart(points, opts = {}) {
   const bars = points
     .map((p, i) => {
       const y = yAt(p.value);
-      const title = `${esc(czDate(p.date))}: ${Math.round(p.value)}${opts.unit ? ' ' + opts.unit : ''}`;
+      const title = `${esc(czDate(p.date))}: ${esc(fmt(p.value))}${opts.unit ? ' ' + opts.unit : ''}`;
       return `<rect class="bar ${p.cls || ''}" x="${xAt(i).toFixed(1)}" y="${y.toFixed(1)}"
                 width="${barW.toFixed(1)}" height="${(pad.t + plotH - y).toFixed(1)}" rx="2">
                 <title>${title}</title></rect>`;
@@ -117,7 +120,7 @@ export function barChart(points, opts = {}) {
   const values = points.length <= 14
     ? points.map((p, i) =>
       `<text class="bar-value" x="${(xAt(i) + barW / 2).toFixed(1)}" y="${(yAt(p.value) - 4).toFixed(1)}"
-             text-anchor="middle">${Math.round(p.value)}</text>`).join('')
+             text-anchor="middle">${esc(fmt(p.value))}</text>`).join('')
     : '';
 
   return `<svg class="chart" viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(opts.title || 'graf')}">

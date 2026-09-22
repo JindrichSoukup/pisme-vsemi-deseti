@@ -19,6 +19,7 @@ export async function render(app) {
   const done = Object.values(p.lessons).filter((l) => l.stars > 0).length;
   const weak = weakestKeys(p.keyStats, 10, 20, keyOrder);
   const kinds = kindSummary(p);
+  const accuracyPoints = attempts.map((a) => ({ value: (a.accuracy || 0) * 100, date: a.at, cls: barClass(a) }));
 
   app.root.innerHTML = `
     <div class="stack">
@@ -50,12 +51,15 @@ export async function render(app) {
       <div class="card">
         <h2>Přesnost</h2>
         <p class="muted small">Čárkované čáry jsou prahy hvězdiček: zdola 90 %, 95 % a 98 %.
-          Osa začíná na padesáti procentech, jinak by ty tři čáry splynuly v jednu.
+          Vejde se sem jen ten práh, který je zrovna na stupnici. Osa začíná tam, kde je
+          nejhorší pokus, jinak by všechny sloupce splynuly v jeden pás těsně pod stem:
+          jedna chyba v celé lekci je jen desetina procentního bodu.
           Přesnost je důležitější než rychlost, takže tenhle graf má smysl sledovat jako první.</p>
-        ${barChart(attempts.map((a) => ({ value: a.accuracy * 100, date: a.at, cls: barClass(a) })), {
+        ${barChart(accuracyPoints, {
           unit: '%',
           max: 100,
-          baseline: 50,
+          baseline: accuracyBaseline(accuracyPoints.map((a) => a.value)),
+          format: (v) => v.toLocaleString('cs-CZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
           title: 'přesnost po pokusech',
           guides: [{ y: 90 }, { y: 95 }, { y: 98 }],
         })}
@@ -237,6 +241,22 @@ function allAttempts(profile) {
     .flatMap(([id, rec]) => (rec.attempts || []).map((a) => ({ ...a, lessonId: id })));
   const practice = (profile.practice || []).map((a) => ({ ...a, practice: true }));
   return lessons.concat(practice).sort((a, b) => new Date(a.at) - new Date(b.at));
+}
+
+/**
+ * Kde má začít osa přesnosti.
+ *
+ * Nejkratší cvičení navíc má kolem tří set úhozů, nejdelší lekce přes tisíc,
+ * takže jedna jediná chyba stojí 0,1 až 0,3 procentního bodu. Kdo píše slušně,
+ * drží se mezi 98 a 100 % a na stupnici od padesáti by všechny jeho pokusy
+ * splynuly v jeden pás. Osa proto začíná pod nejhorším pokusem a jde nahoru
+ * po celých bodech, aby prostřední čára vyšla na půl bodu.
+ */
+export function accuracyBaseline(values) {
+  const steps = [99, 98, 97, 96, 95, 94, 93, 92, 91, 90, 85, 80, 70, 60, 50, 0];
+  const worst = Math.min(100, ...values);
+  // 0,2 bodu pod nejhorším pokusem: jinak by jeho sloupec neměl co nakreslit
+  return steps.find((s) => s <= worst - 0.2) ?? 0;
 }
 
 function barClass(a) {

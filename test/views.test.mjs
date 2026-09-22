@@ -55,6 +55,22 @@ test('rodičovská stránka ukáže cvičení navíc mezi lekcemi, nejnovější
   assert.match(html, /bar--practice/, 'v grafu se cvičení navíc odliší');
 });
 
+test('osa přesnosti se vejde pod nejhorší pokus a píše desetiny', async () => {
+  // jedna chyba je podle délky cvičení 0,1 až 0,3 bodu, takže se na ose
+  // celých procent od padesáti nedá nic rozeznat
+  assert.equal(parents.accuracyBaseline([99.9]), 99, 'samé skoro stoprocentní pokusy');
+  assert.equal(parents.accuracyBaseline([]), 99, 'prázdný profil');
+  assert.equal(parents.accuracyBaseline([97.7, 99.5]), 97, 'osa jde pod nejhorší pokus');
+  assert.equal(parents.accuracyBaseline([84.2]), 80, 'slabý pokus stupnici roztáhne');
+  assert.ok(parents.accuracyBaseline([99.2]) < 99.2, 'nejhorší sloupec musí být vidět');
+
+  const profile = sampleProfile();
+  profile.lessons.L03.attempts = [{ at: '2026-09-10T10:00:00.000Z', netCpm: 30, accuracy: 0.992, stars: 1 }];
+  profile.lessons.L03.bestAccuracy = 0.992;
+  const html = await renderParents(profile);
+  assert.match(html, /99,2/, 'přesnost se píše na desetinu');
+});
+
 /* ---------------------------------------------------- nápověda nad klávesnicí */
 
 const { hintText } = await import('../web/js/views/lesson.js');
