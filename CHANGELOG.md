@@ -4,6 +4,46 @@ Verze se značí podle [semver](https://semver.org): první číslo se zvedne p�
 velké změně, druhé při nové funkci, třetí při opravě. K téhle verzi patří
 i vydání na GitHubu se stejným popisem.
 
+## 1.4.0
+
+### Nové
+
+- **Lekce končí větou s novým písmenem.** Od lekce s celou základní řadou je
+  posledním řádkem lekce věta, ve které se nové písmeno objeví aspoň dvakrát
+  (`jak lhal jak had`, `jirka kreslil draka`, `už žádný nůž`). Dokud se
+  neprobere tečka, jsou to krátké fráze bez interpunkce, potom celé věty.
+- **Přehled pro rodiče vypíše každý pokus.** Karta Hvězdičky dřív ukazovala
+  jen nejlepší výsledek za lekci a cvičení navíc v ní chybělo úplně, takže
+  rodič neviděl, že dítě dnes psalo. Teď jsou tam všechny pokusy od
+  nejnovějšího a grafy kreslí cvičení navíc modře.
+
+### Osnova
+
+- **Víc slov s novým písmenem.** V kroku Slova se nové písmeno ztrácelo mezi
+  ostatními, u Ř a Ž bylo jen v každém dvacátém slově. Teď má pevně polovinu
+  slov kroku Slova a třetinu slov Procvičení. Do slovníku přibylo přes sto
+  slov pro lekce I, Z, Ú, Š, Ž a É.
+- **Lekce se vzory procvičuje opravdu své písmeno.** Ve „Slova dokola“
+  vycházely řádky jako `sada lada rada`, kde R je v jednom slově ze tří.
+  Teď se berou hlavně slova s procvičovaným písmenem (`radil ladil`,
+  `rada krk hrad`). Procvičení na konci téhle lekce písmeno dřív vůbec
+  nezvýhodňovalo, teď má polovinu slov.
+- **Natažený prst se střídá se svou domovskou klávesou.** Krok Jedno po
+  druhém střídal nové písmeno vždycky s J, takže u I vycházelo `ij ji`.
+  Teď `ik ki`, `ed de`. Krok Zpátky domů se už neopakuje v jednom cvičení.
+
+### Opravy
+
+- **Osa přesnosti v grafu pro rodiče je čitelná.** Začínala na padesáti
+  procentech, takže všechny pokusy splynuly do pásu těsně pod stem. Teď
+  začíná kousek pod nejhorším pokusem a popisky ukazují desetiny bodu.
+
+### Aktualizace z předchozí verze
+
+Program je potřeba zavřít a spustit znovu přes `start.bat`. Dosavadní pokrok
+zůstává, lekce si drží svá id. Cvičení navíc odcvičená před aktualizací se
+v přehledu jednotlivě neobjeví, ukládala se jen do součtů.
+
 ## 1.3.0
 
 ### Nové
