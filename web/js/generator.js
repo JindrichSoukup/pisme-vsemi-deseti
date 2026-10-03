@@ -287,8 +287,19 @@ function buildWordPatterns(focusKeys, allowed, lines, opts = {}) {
     if (!families.has(tail)) families.set(tail, []);
     families.get(tail).push(w);
   }
-  const rhymes = shuffle([...families.values()].filter((f) => f.length >= 2))
-    .sort((a, b) => Number(b.some(hasFocus)) - Number(a.some(hasFocus)));
+  // Rodiny se řadí podle toho, jak velká část z nich nové písmeno má. Rodina
+  // "sada lada rada" ho má jen v jednom slově ze tří, takže se z ní vezme
+  // "rada" a k ní nanejvýš stejný počet slov bez něj. Jinak by se v lekci
+  // na R psalo hlavně sada a lada.
+  const share = (f) => f.filter(hasFocus).length / f.length;
+  const all = shuffle([...families.values()].filter((f) => f.length >= 2));
+  const focused = all.filter((f) => f.some(hasFocus));
+  const rhymes = (focused.length ? focused : all).sort((a, b) => share(b) - share(a));
+  const takeFamily = (f, max) => {
+    const yes = shuffle(f.filter(hasFocus)).slice(0, max);
+    const no = shuffle(f.filter((w) => !hasFocus(w)));
+    return yes.concat(no.slice(0, Math.min(max - yes.length, Math.max(yes.length, 1))));
+  };
 
   const groups = [];
   const seen = new Set();
@@ -304,17 +315,18 @@ function buildWordPatterns(focusKeys, allowed, lines, opts = {}) {
   for (let round = 0; groups.length < lines && round < lines * 20; round++) {
     if (round % 2 === 0 && r < rhymes.length) {
       // rodina rýmů, a když je krátká, přibere se k ní další
-      const words = shuffle(rhymes[r++]).slice(0, 4);
+      const words = takeFamily(rhymes[r++], 4);
       while (words.join(' ').length < 10 && words.length < 4 && r < rhymes.length) {
-        words.push(...shuffle(rhymes[r++]).slice(0, 4 - words.length));
+        words.push(...takeFamily(rhymes[r++], 4 - words.length));
       }
       add(words);
     } else {
-      // dlouhé slovo s novým písmenem a k němu jedno nebo dvě krátké
+      // dlouhé slovo s novým písmenem a k němu jedno nebo dvě krátké,
+      // pokud to jde, taky s novým písmenem
       const withFocus = pool.filter(hasFocus);
       const first = pick(withFocus.length ? withFocus : pool);
       const words = [first];
-      for (const w of shuffle(pool)) {
+      for (const w of shuffle(withFocus).concat(shuffle(pool))) {
         if (words.length >= 3) break;
         if (words.includes(w) || words.join(' ').length + 1 + w.length > 16) continue;
         words.push(w);
@@ -1053,9 +1065,14 @@ export function buildStep(lesson, step, ctx, stepIndex = 0) {
 
     case 'mixed':
     default: {
+      // Lekce s opakováním nová písmena nemá, procvičuje ta z lekce před ní,
+      // a těm patří polovina slov jako ve slovech té předchozí lekce.
+      const focus = lesson.focusKeys || newKeys;
       const sent = buildSentences(allowed, 1, { uppercase });
-      const closing = step.closing ? buildClosing(lesson.focusKeys || newKeys, allowed, uppercase) : null;
-      const wordLines = buildWords(newKeys, allowed, Math.max(1, lines - (sent ? 1 : 0)), { keyStats, offset: stepIndex, focusShare: 1 / 3 });
+      const closing = step.closing ? buildClosing(focus, allowed, uppercase) : null;
+      const wordLines = buildWords(focus, allowed, Math.max(1, lines - (sent ? 1 : 0)), {
+        keyStats, offset: stepIndex, focusShare: lesson.focusKeys ? 0.5 : 1 / 3,
+      });
       // závěrečná věta nahradí náhodnou, a kde ještě žádná nebyla, přibude jako řádek navíc
       const tail = closing ? [closing] : (sent || []);
       return { label: step.label, lines: wordLines.concat(tail) };

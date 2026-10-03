@@ -1135,6 +1135,27 @@ test('skupinky slov se na řádku opakují a slova znají jen probraná písmena
   }
 });
 
+test('lekce se vzory píše hlavně slova s písmenem, které procvičuje', () => {
+  // dřív vycházely řádky jako "sada lada rada", kde R je v jednom slově ze tří
+  for (const id of ['L08P', 'L09P', 'L21P', 'L23P']) {
+    const lesson = lessonById(id);
+    const allowed = allowedCharsUpTo(LESSONS.indexOf(lesson));
+    const ctx = { allowed, keyStats: {}, uppercase: knowsUppercase(LESSONS.indexOf(lesson)) };
+    const has = (w) => [...w].some((ch) => lesson.focusKeys.includes(ch));
+    const shareOf = (lines) => {
+      const words = lines.join(' ').split(' ');
+      return words.filter(has).length / words.length;
+    };
+    for (let run = 0; run < 10; run++) {
+      const patterns = buildStep(lesson, lesson.steps.find((s) => s.kind === 'wordpatterns'), ctx, 2).lines;
+      assert.ok(shareOf(patterns) >= 0.6, `${id} slova dokola: ${patterns.join(' | ')}`);
+      // poslední řádek procvičení je věta, ta se nepočítá
+      const mixed = buildStep(lesson, lesson.steps.find((s) => s.kind === 'mixed'), ctx, 3).lines.slice(0, -1);
+      assert.ok(shareOf(mixed) >= 0.4, `${id} procvičení: ${mixed.join(' | ')}`);
+    }
+  }
+});
+
 /* ---------------------------------------- splněný dnešní cíl uprostřed lekce */
 
 test('po splnění dnešního cíle se radí odpočinek, ne další cvičení', async () => {
