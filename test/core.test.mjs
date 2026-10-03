@@ -32,6 +32,7 @@ const contentDir = path.join(here, '..', 'web', 'content');
 const read = (f) => JSON.parse(fs.readFileSync(path.join(contentDir, f), 'utf8'));
 const WORDS = read('words-cs.json');
 const SENTENCES = read('sentences-cs.json');
+const PHRASES = read('phrases-cs.json');
 const TEXTS = read('texts-cs.json');
 const WORDS_EN = read('words-en.json');
 const SENTENCES_EN = read('sentences-en.json');
@@ -39,6 +40,7 @@ const THEMES = { ...read('themes-cs.json'), ...read('themes-en.json') };
 setContent({
   words: WORDS,
   sentences: SENTENCES,
+  phrases: PHRASES,
   texts: TEXTS,
   wordsEn: WORDS_EN,
   sentencesEn: SENTENCES_EN,
@@ -222,7 +224,7 @@ test('všechna slova ve slovníku jdou na české klávesnici napsat', () => {
 
 test('všechny věty jdou na české klávesnici napsat', () => {
   const typeable = new Set(allChars('cs-qwertz'));
-  for (const s of SENTENCES.concat(TEXTS.map((t) => t.text))) {
+  for (const s of SENTENCES.concat(PHRASES, TEXTS.map((t) => t.text))) {
     for (const ch of s) {
       assert.ok(typeable.has(ch), `věta "${s}": znak "${ch}" na klávesnici není`);
     }
@@ -368,6 +370,27 @@ test('lekce s natažením prstu cvičí návrat do základní polohy', () => {
 
   // lekce, jejíž písmena leží přímo v základní řadě, tenhle krok nepotřebuje
   assert.ok(!lessonById('L04').steps.some((s) => s.kind === 'reach'));
+});
+
+test('lekce od celé základní řady končí větou s novým písmenem', () => {
+  const first = lessonById('L06');
+  const ctx = (lesson) => {
+    const i = LESSONS.indexOf(lesson);
+    return { allowed: allowedCharsUpTo(i), keyStats: {}, uppercase: knowsUppercase(i) };
+  };
+  const firstLines = buildStep(first, first.steps.at(-1), ctx(first), 2).lines;
+  assert.ok(firstLines.at(-1).startsWith('jak lhal jak had'), 'L06: ' + firstLines.at(-1));
+  assert.equal(firstLines.length, first.steps.at(-1).lines + 1, 'L06: věta je řádek navíc');
+
+  for (const lesson of LESSONS.slice(LESSONS.indexOf(first))) {
+    const step = lesson.steps.at(-1);
+    if (!step.closing) continue;
+    const focus = (lesson.focusKeys || lesson.newKeys).filter((k) => k.length === 1 && k !== 'q');
+    if (!focus.length) continue;
+    const last = buildStep(lesson, step, ctx(lesson), 2).lines.at(-1);
+    assert.ok(focus.some((k) => last.includes(k)), `${lesson.id}: v závěrečné větě chybí ${focus.join('')}: ${last}`);
+  }
+  assert.ok(!lessonById('L05').steps.some((s) => s.closing), 'před celou základní řadou ještě věta není');
 });
 
 test('velká písmena mají cvičení na střídání obou Shiftů', () => {

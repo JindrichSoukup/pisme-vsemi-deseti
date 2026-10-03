@@ -15,6 +15,7 @@ const read = (f) => JSON.parse(fs.readFileSync(path.join(content, f), 'utf8'));
 setContent({
   words: read('words-cs.json'),
   sentences: read('sentences-cs.json'),
+  phrases: read('phrases-cs.json'),
   texts: read('texts-cs.json'),
 });
 

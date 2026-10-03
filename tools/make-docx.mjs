@@ -24,6 +24,7 @@ const readContent = (f) => JSON.parse(fs.readFileSync(path.join(root, 'web', 'co
 setContent({
   words: readContent('words-cs.json'),
   sentences: readContent('sentences-cs.json'),
+  phrases: readContent('phrases-cs.json'),
   texts: readContent('texts-cs.json'),
   wordsEn: readContent('words-en.json'),
   sentencesEn: readContent('sentences-en.json'),

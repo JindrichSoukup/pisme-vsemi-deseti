@@ -808,6 +808,20 @@ function needsSplit(lesson, index) {
 export const LESSONS = BASE_LESSONS.flatMap((l, i) => (needsSplit(l, i) ? splitLesson(l) : [l]));
 
 /**
+ * Od celé základní řady se dá napsat první věta (jak lhal jak had), a od té
+ * doby každá lekce končí řádkem s větou, ve které je nové písmeno. Kroky jsou
+ * sdílené mezi lekcemi, proto se poslední krok kopíruje, ne přepisuje.
+ */
+const FIRST_SENTENCE_LESSON = 'L06';
+const CLOSING_KINDS = new Set(['words', 'mixed']);
+LESSONS.forEach((lesson, i) => {
+  if (i < LESSONS.findIndex((l) => l.id === FIRST_SENTENCE_LESSON)) return;
+  const last = lesson.steps[lesson.steps.length - 1];
+  if (!CLOSING_KINDS.has(last.kind)) return;
+  lesson.steps = [...lesson.steps.slice(0, -1), { ...last, closing: true }];
+});
+
+/**
  * Znaky, které lekce zpřístupní, ale nedriluje je samostatně.
  * Velká písmena s háčky a čárkami se píší úplně stejně jako ostatní velká
  * písmena, stačí tedy, že se objeví ve slovech a větách.

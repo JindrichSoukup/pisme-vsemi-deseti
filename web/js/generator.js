@@ -23,24 +23,24 @@ const PER_LINE = 15;
 const LINE_WIDTH = 68;
 const DRILL_WIDTH = 60;
 
-let CONTENT = { words: [], sentences: [], texts: [], wordsEn: [], sentencesEn: [], themes: {} };
+let CONTENT = { words: [], sentences: [], phrases: [], texts: [], wordsEn: [], sentencesEn: [], themes: {} };
 
 /** Načte slovník, věty a texty. Volá se jednou při startu aplikace. */
 export async function loadContent() {
   const files = [
-    'words-cs.json', 'sentences-cs.json', 'texts-cs.json',
+    'words-cs.json', 'sentences-cs.json', 'phrases-cs.json', 'texts-cs.json',
     'words-en.json', 'sentences-en.json', 'themes-cs.json', 'themes-en.json',
   ];
-  const [words, sentences, texts, wordsEn, sentencesEn, themesCs, themesEn] = await Promise.all(
+  const [words, sentences, phrases, texts, wordsEn, sentencesEn, themesCs, themesEn] = await Promise.all(
     files.map((f) => fetch('content/' + f).then((r) => r.json()))
   );
-  CONTENT = { words, sentences, texts, wordsEn, sentencesEn, themes: { ...themesCs, ...themesEn } };
+  CONTENT = { words, sentences, phrases, texts, wordsEn, sentencesEn, themes: { ...themesCs, ...themesEn } };
   return CONTENT;
 }
 
 /** Pro testy v Node, kde fetch na relativní cestu nefunguje. */
 export function setContent(content) {
-  CONTENT = { words: [], sentences: [], texts: [], wordsEn: [], sentencesEn: [], themes: {}, ...content };
+  CONTENT = { words: [], sentences: [], phrases: [], texts: [], wordsEn: [], sentencesEn: [], themes: {}, ...content };
 }
 
 /* ---------------------------------------------------------- pomocné věci */
@@ -873,6 +873,27 @@ function buildSentences(allowed, lines, opts = {}) {
   return out;
 }
 
+/**
+ * Závěrečná věta lekce: jak lhal jak had
+ *
+ * Lekce končí řádkem s opravdovou větou, ve které je nové písmeno. Dokud se
+ * neprobrala tečka, věty ze sentences-cs.json napsat nejdou, proto jsou tu
+ * ještě krátké fráze bez interpunkce. Krátká věta se v řádku zopakuje,
+ * podruhé už se píše z paměti.
+ */
+function buildClosing(focusKeys, allowed, uppercase) {
+  const focus = focusKeys.filter((k) => k.length === 1);
+  const usable = (list) => list.filter((s) => fits(s, allowed));
+  const withFocus = (list) => list.filter((s) => focus.some((k) => s.includes(k)));
+  const sentences = usable(CONTENT.sentences.map((s) => (uppercase ? s : s.toLowerCase())));
+  const phrases = usable(CONTENT.phrases);
+  // celá věta s tečkou má přednost před frází, nové písmeno před vším
+  const pool = [withFocus(sentences), withFocus(phrases), sentences, phrases].find((l) => l.length);
+  if (!pool) return null;
+  const sentence = pick(pool);
+  return sentence.length * 2 + 1 <= LINE_WIDTH ? fillRow(sentence, LINE_WIDTH) : sentence;
+}
+
 /** Číslice samostatně a pak v celých číslech. */
 function buildNumbers(lines, phase = 0) {
   const groups = [];
@@ -992,19 +1013,19 @@ export function buildStep(lesson, step, ctx, stepIndex = 0) {
     case 'syllables':
       return { label: step.label, lines: buildSyllables(newKeys, allowed, lines, stepIndex) };
 
-    case 'words':
-      return {
-        label: step.label,
-        lines: buildWords(newKeys, allowed, lines, {
-          keyStats,
-          capitalize: step.capitalize,
-          punct: step.punct,
-          focusOnly: step.focusOnly,
-          // polovina slov s novým písmenem, jinak se mezi ostatními ztratí
-          focusShare: 0.5,
-          offset: stepIndex,
-        }),
-      };
+    case 'words': {
+      const closing = step.closing ? buildClosing(lesson.focusKeys || newKeys, allowed, uppercase) : null;
+      const wordLines = buildWords(newKeys, allowed, lines, {
+        keyStats,
+        capitalize: step.capitalize,
+        punct: step.punct,
+        focusOnly: step.focusOnly,
+        // polovina slov s novým písmenem, jinak se mezi ostatními ztratí
+        focusShare: 0.5,
+        offset: stepIndex,
+      });
+      return { label: step.label, lines: closing ? wordLines.concat(closing) : wordLines };
+    }
 
     case 'sentences': {
       const s = buildSentences(allowed, lines, { uppercase, punctuate: step.punctuate });
@@ -1022,8 +1043,11 @@ export function buildStep(lesson, step, ctx, stepIndex = 0) {
     case 'mixed':
     default: {
       const sent = buildSentences(allowed, 1, { uppercase });
+      const closing = step.closing ? buildClosing(lesson.focusKeys || newKeys, allowed, uppercase) : null;
       const wordLines = buildWords(newKeys, allowed, Math.max(1, lines - (sent ? 1 : 0)), { keyStats, offset: stepIndex, focusShare: 1 / 3 });
-      return { label: step.label, lines: sent ? wordLines.concat(sent) : wordLines };
+      // závěrečná věta nahradí náhodnou, a kde ještě žádná nebyla, přibude jako řádek navíc
+      const tail = closing ? [closing] : (sent || []);
+      return { label: step.label, lines: wordLines.concat(tail) };
     }
   }
 }
