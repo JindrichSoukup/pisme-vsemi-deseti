@@ -884,11 +884,22 @@ function buildSentences(allowed, lines, opts = {}) {
 function buildClosing(focusKeys, allowed, uppercase) {
   const focus = focusKeys.filter((k) => k.length === 1);
   const usable = (list) => list.filter((s) => fits(s, allowed));
-  const withFocus = (list) => list.filter((s) => focus.some((k) => s.includes(k)));
+  const count = (s) => [...s].filter((ch) => focus.includes(ch)).length;
+  const atLeast = (list, n) => list.filter((s) => count(s) >= n);
   const sentences = usable(CONTENT.sentences.map((s) => (uppercase ? s : s.toLowerCase())));
-  const phrases = usable(CONTENT.phrases);
-  // celá věta s tečkou má přednost před frází, nové písmeno před vším
-  const pool = [withFocus(sentences), withFocus(phrases), sentences, phrases].find((l) => l.length);
+  // po velkých písmenech je z fráze věta: velké písmeno a tečka, pokud to
+  // velké písmeno už jde napsat
+  const capital = (s) => (uppercase && allowed.has(s[0].toUpperCase())
+    ? s[0].toUpperCase() + s.slice(1) + (/[.?!]$/.test(s) ? '' : '.')
+    : s);
+  const phrases = usable(CONTENT.phrases.map(capital));
+  // Nové písmeno má být ve větě aspoň dvakrát, jednou je na nácvik málo.
+  // Při stejném počtu má celá věta s tečkou přednost před frází.
+  const pool = [
+    atLeast(sentences, 2), atLeast(phrases, 2),
+    atLeast(sentences, 1), atLeast(phrases, 1),
+    sentences, phrases,
+  ].find((l) => l.length);
   if (!pool) return null;
   const sentence = pick(pool);
   return sentence.length * 2 + 1 <= LINE_WIDTH ? fillRow(sentence, LINE_WIDTH) : sentence;

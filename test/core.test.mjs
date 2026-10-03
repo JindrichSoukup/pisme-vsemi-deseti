@@ -373,6 +373,7 @@ test('lekce s natažením prstu cvičí návrat do základní polohy', () => {
 });
 
 test('lekce od celé základní řady končí větou s novým písmenem', () => {
+  const knowsUppercaseOnly = (lesson) => (lesson.focusKeys || lesson.newKeys).every((k) => k !== k.toLowerCase());
   const first = lessonById('L06');
   const ctx = (lesson) => {
     const i = LESSONS.indexOf(lesson);
@@ -389,6 +390,15 @@ test('lekce od celé základní řady končí větou s novým písmenem', () => 
     if (!focus.length) continue;
     const last = buildStep(lesson, step, ctx(lesson), 2).lines.at(-1);
     assert.ok(focus.some((k) => last.includes(k)), `${lesson.id}: v závěrečné větě chybí ${focus.join('')}: ${last}`);
+    // věta se v řádku opakuje, počítá se jen jedno kolo
+    const words = last.split(' ');
+    const size = words.findIndex((_, n) => n > 0 && words.join(' ') === words.slice(0, n).join(' ').concat(' ').repeat(words.length / n).trim());
+    const sentence = size > 0 ? words.slice(0, size).join(' ') : last;
+    const times = [...sentence].filter((ch) => focus.includes(ch)).length;
+    // W skoro žádné české slovo nemá a velké písmeno je na začátku věty jen jednou
+    if (!['w'].includes(focus[0]) && !knowsUppercaseOnly(lesson)) {
+      assert.ok(times >= 2, `${lesson.id}: ${focus.join('')} je ve větě jen ${times}×: ${sentence}`);
+    }
   }
   assert.ok(!lessonById('L05').steps.some((s) => s.closing), 'před celou základní řadou ještě věta není');
 });
