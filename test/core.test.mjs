@@ -345,7 +345,15 @@ test('lekce s natažením prstu cvičí návrat do základní polohy', () => {
     assert.ok(lines[1].includes(own), id + ': druhý řádek zapomněl na novou klávesu');
     const other = lines[1].split(' ').find((g) => g !== own && g.length === 3);
     assert.ok(other, id + ': druhá ruka se do sevření nedostala: ' + lines[1]);
+    assert.equal(new Set(lines).size, lines.length, id + ': řádek se v kroku opakuje: ' + lines.join(' | '));
   }
+
+  // nové písmeno se nejdřív střídá s domovskou klávesou svého prstu: ik ki, ne ij ji
+  const iLesson = lessonById('L07B');
+  const iLines = buildStep(iLesson, iLesson.steps.find((s) => s.kind === 'letters'),
+    { allowed: allowedCharsUpTo(LESSONS.indexOf(iLesson)), keyStats: {}, uppercase: false }, 1).lines;
+  assert.ok(iLines.some((l) => l.startsWith('ik ki ')), 'L07B: ' + iLines.join(' | '));
+  assert.ok(!iLines.some((l) => /\bij\b/.test(l)), 'L07B: I se střídá s J: ' + iLines.join(' | '));
 
   // lekce, jejíž písmena leží přímo v základní řadě, tenhle krok nepotřebuje
   assert.ok(!lessonById('L04').steps.some((s) => s.kind === 'reach'));

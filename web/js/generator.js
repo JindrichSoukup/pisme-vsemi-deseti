@@ -154,15 +154,18 @@ function descendPair(a, b) {
  *
  * @param phase 0 = opakování jednoho písmene, 1 = střídání
  */
-function buildLetters(newKeys, lines, allowed, phase = 0, offset = 0) {
+function buildLetters(newKeys, lines, allowed, phase = 0, offset = 0, layout = 'cs-qwertz') {
   const fresh = newKeys.filter((k) => k.length === 1);
   let keys = fresh.length ? fresh.slice() : ['f', 'j'];
 
   // u lekce s jediným novým písmenem se střídá se známými, jinak by řádek
-  // byl jen jedno písmeno donekonečna
+  // byl jen jedno písmeno donekonečna. Klávesa mimo základní řadu se nejdřív
+  // střídá s domovskou klávesou svého prstu: ik ki, prst tam a zpátky.
   if (keys.length === 1 && allowed) {
-    const partners = ['j', 'f', 'a', 'k', 'd', 's', 'l']
-      .filter((c) => allowed.has(c) && c !== keys[0]);
+    const info = keyForChar(keys[0], layout);
+    const home = info && HOME_OF[info.finger];
+    const partners = [home, 'j', 'f', 'a', 'k', 'd', 's', 'l']
+      .filter((c, i, all) => c && allowed.has(c) && c !== keys[0] && all.indexOf(c) === i);
     keys = keys.concat(partners.slice(0, 2));
   }
 
@@ -326,8 +329,8 @@ function buildWordPatterns(focusKeys, allowed, lines, opts = {}) {
   return out;
 }
 
-/** Naposledy probrané sevření druhé ruky, nebo nic. */
-function lastReachOfOtherHand(key, allowed, layout) {
+/** Naposledy probrané sevření druhé ruky (nebo té samé, ale jiným prstem), nebo nic. */
+function lastReach(key, allowed, layout, sameHand = false) {
   const mine = keyForChar(key, layout);
   if (!mine) return null;
   const myHand = (FINGERS[mine.finger] || {}).hand;
@@ -335,7 +338,8 @@ function lastReachOfOtherHand(key, allowed, layout) {
   for (const c of list.reverse()) {
     const info = keyForChar(c, layout);
     if (!info || info.dead || info.shift) continue;
-    if ((FINGERS[info.finger] || {}).hand === myHand) continue;
+    if (((FINGERS[info.finger] || {}).hand === myHand) !== sameHand) continue;
+    if (sameHand && info.finger === mine.finger) continue;
     const home = HOME_OF[info.finger];
     if (home && home !== c) return home + c + home;
   }
@@ -369,9 +373,15 @@ function buildReach(newKeys, lines, layout = 'cs-qwertz', allowed = null) {
   // Lekce přidává jednu klávesu, takže by byl řádek pořád ten samý. Druhá
   // ruka se přibere z toho, co se probralo naposledy, ať se návrat do
   // základní polohy cvičí na obou rukou zároveň.
+  // Třetí řádek pak vezme sevření stejné ruky jiným prstem (kik jhj), aby se
+  // nevracel ten první a ruka se učila vracet domů z různých kláves.
   if (units.length === 1 && allowed) {
-    const mirror = lastReachOfOtherHand(newKeys[0], allowed, layout);
+    const mirror = lastReach(newKeys[0], allowed, layout);
     if (mirror) rows.push(fillRow(units[0] + ' ' + mirror));
+    const neighbour = lastReach(newKeys[0], allowed, layout, true);
+    if (neighbour) rows.push(fillRow(units[0] + ' ' + neighbour));
+    // delší lekce mají čtyři řádky, poslední vezme všechna tři sevření
+    if (mirror && neighbour) rows.push(fillRow([units[0], mirror, neighbour].join(' ')));
   }
   // obě ruce hned za sebou, ať se návrat cvičí na obou najednou
   if (units.length >= 2) rows.push(fillRow(units[0] + ' ' + units[1]));
@@ -892,7 +902,7 @@ export function buildStep(lesson, step, ctx, stepIndex = 0) {
 
   switch (step.kind) {
     case 'letters':
-      return { label: step.label, lines: buildLetters(newKeys, lines, allowed, step.phase ?? 0, 0) };
+      return { label: step.label, lines: buildLetters(newKeys, lines, allowed, step.phase ?? 0, 0, layout) };
 
     case 'theme': {
       const themed = buildTheme(allowed, lines, step.theme, step.mode || 'words');

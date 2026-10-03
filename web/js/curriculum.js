@@ -188,7 +188,7 @@ const BASE_LESSONS = [
     points: [
       'I je nad K, stejně jako E nad D.',
       'V posledním cvičení se E a I střídají, tam se pozná, jestli to prsty umí.',
-      'Po úhozu nahmatej hrbolek na F nebo J.',
+      'Po úhozu se prostředníček vrátí na K. Ukazováček celou dobu leží na hrbolku na J, podle něj poznáš, že ruka neujela.',
     ],
   }, standardSteps),
 
