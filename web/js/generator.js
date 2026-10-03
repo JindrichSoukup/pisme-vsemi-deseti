@@ -792,18 +792,40 @@ function buildWords(newKeys, allowed, lines, opts = {}) {
     return s;
   };
 
+  // Slova s novým písmenem mají pevný podíl míst. Samotná váha nestačí: ve
+  // slovníku jich je jen hrstka a s každou lekcí jich ubývá proti ostatním,
+  // takže u Ž by bylo nové písmeno jen v každém dvacátém slově.
+  const hasNew = (w) => [...w].some((ch) => newKeys.includes(ch));
+  const fresh = opts.focusShare ? pool.filter(hasNew) : [];
+  const rest = fresh.length ? pool.filter((w) => !hasNew(w)) : pool;
+  const share = fresh.length && rest.length ? opts.focusShare : (fresh.length ? 1 : 0);
+
   // Slova se berou v náhodném pořadí, ale každé jednou za kolo. Když je
   // slovníček malý, kolo se prostě zopakuje, jen nikdy dvakrát po sobě totéž.
-  const chosen = [];
-  let used = new Set();
   let last = null;
+  const drawer = (list) => {
+    let used = new Set();
+    return () => {
+      for (let guard = 0; guard < 200; guard++) {
+        if (used.size >= list.length) used = new Set();
+        const w = weightedPick(list, score);
+        if (used.has(w) || (w === last && list.length > 1)) continue;
+        used.add(w);
+        return w;
+      }
+      return null;
+    };
+  };
+  const nextFresh = share ? drawer(fresh) : null;
+  const nextRest = share < 1 ? drawer(rest) : null;
+
+  const chosen = [];
   // na řádek se vejde zhruba devět slov, ať se seznam nemusí opakovat
   const target = lines * PER_LINE;
-  for (let guard = 0; guard < target * 25 && chosen.length < target; guard++) {
-    if (used.size >= pool.length) used = new Set();
-    const w = weightedPick(pool, score);
-    if (used.has(w) || w === last) continue;
-    used.add(w);
+  for (let i = 0; i < target; i++) {
+    const wantFresh = Math.floor((i + 1) * share) > Math.floor(i * share);
+    const w = (wantFresh ? nextFresh : nextRest)();
+    if (!w) break;
     last = w;
     chosen.push(opts.capitalize ? w[0].toUpperCase() + w.slice(1) : w);
   }
@@ -978,6 +1000,8 @@ export function buildStep(lesson, step, ctx, stepIndex = 0) {
           capitalize: step.capitalize,
           punct: step.punct,
           focusOnly: step.focusOnly,
+          // polovina slov s novým písmenem, jinak se mezi ostatními ztratí
+          focusShare: 0.5,
           offset: stepIndex,
         }),
       };
@@ -998,7 +1022,7 @@ export function buildStep(lesson, step, ctx, stepIndex = 0) {
     case 'mixed':
     default: {
       const sent = buildSentences(allowed, 1, { uppercase });
-      const wordLines = buildWords(newKeys, allowed, Math.max(1, lines - (sent ? 1 : 0)), { keyStats, offset: stepIndex });
+      const wordLines = buildWords(newKeys, allowed, Math.max(1, lines - (sent ? 1 : 0)), { keyStats, offset: stepIndex, focusShare: 1 / 3 });
       return { label: step.label, lines: sent ? wordLines.concat(sent) : wordLines };
     }
   }

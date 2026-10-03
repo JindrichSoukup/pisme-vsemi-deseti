@@ -519,7 +519,7 @@ const BASE_LESSONS = [
     points: [
       'Ý je nad U.',
       'Krátké Y je dole vlevo, dlouhé Ý nahoře vpravo.',
-      'Po úhozu se prst vrací na hrbolek.',
+      'Po úhozu se ukazováček vrací na hrbolek na J.',
     ],
   }, longSteps),
 

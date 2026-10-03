@@ -355,6 +355,17 @@ test('lekce s natažením prstu cvičí návrat do základní polohy', () => {
   assert.ok(iLines.some((l) => l.startsWith('ik ki ')), 'L07B: ' + iLines.join(' | '));
   assert.ok(!iLines.some((l) => /\bij\b/.test(l)), 'L07B: I se střídá s J: ' + iLines.join(' | '));
 
+  // ve slovech se nové písmeno neztratí ani v pozdních lekcích, kde je slovník velký
+  for (const id of ['L07B', 'L23B']) {
+    const lesson = lessonById(id);
+    const step = lesson.steps.find((s) => s.kind === 'words');
+    const words = buildStep(lesson, step,
+      { allowed: allowedCharsUpTo(LESSONS.indexOf(lesson)), keyStats: {}, uppercase: false }, 3)
+      .lines.join(' ').split(' ');
+    const share = words.filter((w) => lesson.newKeys.some((k) => w.includes(k))).length / words.length;
+    assert.ok(share >= 0.45, `${id}: nové písmeno je jen v ${Math.round(share * 100)} % slov`);
+  }
+
   // lekce, jejíž písmena leží přímo v základní řadě, tenhle krok nepotřebuje
   assert.ok(!lessonById('L04').steps.some((s) => s.kind === 'reach'));
 });
