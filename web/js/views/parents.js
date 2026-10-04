@@ -152,18 +152,24 @@ function kindTable(rows) {
       <td>${esc(kindLabel(r.kind))}</td>
       <td>${pct(r.accuracy)}</td>
       <td>${r.netCpm} ÚPM</td>
-      <td class="muted">${trendText(r.trend, r.runs)}</td>
+      <td class="muted">${trendText(r)}</td>
       <td class="muted">${r.runs}×</td>
     </tr>`).join('')}</tbody>
   </table>`;
 }
 
-/** Slovní trend. Pod čtyři měření se nic netvrdí, byl by to jen šum. */
-function trendText(trend, runs) {
-  if (runs < 4) return 'zatím málo dat';
-  if (trend > 8) return `zrychluje o ${trend} %`;
-  if (trend < -8) return `zpomaluje o ${Math.abs(trend)} %`;
-  return 'drží se';
+/**
+ * Slovní trend a pod ním, co se s čím porovnává. Samotné „zrychluje o 12 %“
+ * neříká, jestli za týden, nebo za půl roku. Pod čtyři měření se nic
+ * netvrdí, byl by to jen šum.
+ */
+export function trendText({ trend, trendRuns, trendSince }) {
+  if (!trendRuns) return 'zatím málo dat';
+  const verdict = trend > 8 ? `zrychluje o ${trend} %`
+    : trend < -8 ? `zpomaluje o ${Math.abs(trend)} %`
+      : 'drží se';
+  const since = trendSince ? `, měří se od ${czDate(trendSince)}` : '';
+  return `${verdict}<br><span class="small">${plural(trendRuns, 'poslední', 'poslední', 'posledních')} ${trendRuns} cvičení proti ${trendRuns} předchozím${since}</span>`;
 }
 
 /**

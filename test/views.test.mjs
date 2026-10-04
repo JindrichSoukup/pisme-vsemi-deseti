@@ -397,6 +397,29 @@ test('trend se určuje až od čtyř měření', () => {
   assert.equal(trendOf([10, 20, 30]), 0, 'tři měření jsou málo');
   assert.equal(trendOf([50, 50, 60, 60]), 20);
   assert.equal(trendOf([60, 60, 50, 50]), -17);
+  assert.equal(trendOf([10, 50, 50, 60, 60]), 20, 'při lichém počtu se nejstarší vynechá');
+});
+
+test('trend říká, co se s čím porovnává', async () => {
+  const { trendText } = await import('../web/js/views/parents.js');
+  const recentAt = ['2026-09-20T10:00:00Z', '2026-09-21T10:00:00Z', '2026-09-24T10:00:00Z',
+    '2026-09-25T10:00:00Z', '2026-09-28T10:00:00Z', '2026-10-01T10:00:00Z'];
+  const rows = kindSummary({ kindStats: {
+    words: { runs: 6, keystrokes: 600, errors: 0, durationMs: 360000, recent: [50, 50, 50, 56, 56, 56], recentAt },
+  } });
+  assert.equal(rows[0].trendRuns, 3);
+  assert.equal(rows[0].trendSince, recentAt[0]);
+  const text = trendText(rows[0]);
+  assert.match(text, /zrychluje o 12 %/);
+  assert.match(text, /poslední 3 cvičení proti 3 předchozím, měří se od 20\. 9\. 2026/);
+
+  // starší profil nemá data měření, aspoň počty se ale říct dají
+  const old = kindSummary({ kindStats: {
+    words: { runs: 8, keystrokes: 600, errors: 0, durationMs: 360000, recent: [50, 50, 50, 50, 50, 50, 50, 50], recentAt: recentAt.slice(-2) },
+  } })[0];
+  assert.equal(old.trendSince, null);
+  assert.match(trendText(old), /drží se.*poslední 4 cvičení proti 4 předchozím<\/span>$/);
+  assert.equal(trendText({ trend: 0, trendRuns: 0, trendSince: null }), 'zatím málo dat');
 });
 
 test('cvičení navíc se skládá jen z jednoho druhu a z rozcvičky', () => {

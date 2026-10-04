@@ -222,7 +222,11 @@ function applySteps(profile, steps) {
     cur.lastAt = new Date().toISOString();
     // pár posledních čistých rychlostí kvůli trendu, víc není potřeba
     cur.recent = (cur.recent || []).concat(Math.round(((typed - num(s.errors)) / ms) * 60000));
+    // kdy se měřilo, ať se u trendu dá říct, za jakou dobu. Starší profily
+    // data nemají, takže jich může být míň a patří k posledním měřením.
+    cur.recentAt = (cur.recentAt || []).concat(cur.lastAt);
     if (cur.recent.length > 10) cur.recent = cur.recent.slice(-10);
+    if (cur.recentAt.length > 10) cur.recentAt = cur.recentAt.slice(-10);
     profile.kindStats[kind] = cur;
   }
 }

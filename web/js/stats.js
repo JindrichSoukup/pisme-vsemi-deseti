@@ -182,6 +182,7 @@ export function kindSummary(profile) {
       netCpm,
       accuracy,
       trend: trendOf(s.recent || []),
+      ...trendSpan(s.recent || [], s.recentAt || []),
       lastAt: s.lastAt || null,
     };
   });
@@ -190,17 +191,31 @@ export function kindSummary(profile) {
 }
 
 /**
- * Kam se druh cvičení ubírá: porovná se první a druhá polovina posledních
- * měření. Pod čtyři měření se trend neurčuje, to by byl jen šum.
+ * Kam se druh cvičení ubírá: průměrná rychlost posledních měření proti
+ * stejnému počtu měření těsně před nimi. Při lichém počtu se nejstarší
+ * vynechá, aby obě poloviny navazovaly. Pod čtyři měření se trend
+ * neurčuje, to by byl jen šum.
  */
 export function trendOf(recent) {
   if (!Array.isArray(recent) || recent.length < 4) return 0;
   const half = Math.floor(recent.length / 2);
   const avg = (list) => list.reduce((a, b) => a + b, 0) / list.length;
-  const before = avg(recent.slice(0, half));
+  const before = avg(recent.slice(-2 * half, -half));
   const after = avg(recent.slice(-half));
   if (before <= 0) return 0;
   return Math.round(((after - before) / before) * 100);
+}
+
+/**
+ * Co trend porovnává: kolik cvičení je v každé polovině a od kdy se měří.
+ * Starší profily data měření nemají, u nich je trendSince null.
+ */
+export function trendSpan(recent, recentAt = []) {
+  const half = Math.floor(recent.length / 2);
+  if (half < 2) return { trendRuns: 0, trendSince: null };
+  // data patří k posledním měřením, starší profily je u prvních nemají
+  const first = recentAt.length - 2 * half;
+  return { trendRuns: half, trendSince: first >= 0 ? recentAt[first] : null };
 }
 
 /** Váhy pro adaptivní výběr: slabší klávesy dostanou vyšší číslo. */
