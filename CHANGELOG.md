@@ -4,6 +4,27 @@ Verze se značí podle [semver](https://semver.org): první číslo se zvedne p�
 velké změně, druhé při nové funkci, třetí při opravě. K téhle verzi patří
 i vydání na GitHubu se stejným popisem.
 
+## 1.4.1
+
+### Opravy
+
+- **Opakovací lekce cvičí svá písmena.** Opakování E, I, R a U a další
+  opakovací lekce nevěděly, která písmena opakují. Rozcvička brala jen tři
+  naposledy naučená, takže E vypadlo, a skupinky ani slova je nijak
+  nezvýhodňovaly. Teď je v rozcvičce každé z nich i jeho sevření mezi
+  domovské klávesy, každá zamíchaná skupinka má aspoň jedno z nich a ve
+  slovech jsou zhruba ve dvou třetinách. Opakování celé abecedy se soustředí
+  na X, B, N a Y, opakování s háčky a čárkami na Ř, Ž, Ě, Í a É.
+- **Trend podle druhu cvičení říká, co porovnává.** Samotné „zrychluje
+  o 12 %“ neříkalo, za jakou dobu. Pod trendem je teď „posledních 5 cvičení
+  proti 5 předchozím, měří se od 20. 9. 2026“.
+
+### Aktualizace z předchozí verze
+
+Program je potřeba zavřít a spustit znovu přes `start.bat`. Datum měření
+se u trendu začne ukazovat, až se po aktualizaci nasbírají nová cvičení,
+počet porovnávaných cvičení je vidět hned.
+
 ## 1.4.0
 
 ### Nové
