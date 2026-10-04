@@ -833,6 +833,21 @@ const EXTRA_KEYS = {
 };
 for (const lesson of LESSONS) lesson.extraKeys = EXTRA_KEYS[lesson.id] || [];
 
+/**
+ * Písmena, která opakovací lekce procvičuje. Nová písmena nepřidává, takže
+ * bez tohohle seznamu by rozcvička vzala jen tři poslední naučená a ve
+ * skupinkách i slovech by se opakovaná písmena nijak nezvýhodnila. Celá
+ * abeceda a háčky s čárkami se soustředí na to, co se ještě neopakovalo.
+ */
+const REVIEW_FOCUS = {
+  L09R: ['e', 'i', 'r', 'u'],
+  L16R: ['v', 'm', 'c', ','],
+  L18R: ['x', 'b', 'n', 'y'],
+  L22R: ['š', 'á', 'č', 'ý'],
+  L25R: ['ř', 'ž', 'ě', 'í', 'é'],
+};
+for (const [id, keys] of Object.entries(REVIEW_FOCUS)) lessonById(id).focusKeys = keys;
+
 /** Lekce, která zavádí opravování chyb. Do té doby Backspace nefunguje. */
 const BACKSPACE_LESSON = 'L20B';
 lessonById(BACKSPACE_LESSON).introducesBackspace = true;

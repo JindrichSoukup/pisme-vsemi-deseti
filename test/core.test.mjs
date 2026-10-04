@@ -1081,7 +1081,7 @@ test('žádné dvě lekce nemají stejné id', () => {
 
 test('lekce s novým písmenem má za sebou lekci se vzory', () => {
   for (const [i, lesson] of LESSONS.entries()) {
-    if (!lesson.focusKeys) continue;
+    if (!lesson.focusKeys || !lesson.id.endsWith('P')) continue; // opakovací lekce mají focusKeys taky
     const before = LESSONS[i - 1];
     assert.equal(lesson.id, before.id + 'P', `${lesson.id} nestojí hned za svou první částí`);
     assert.deepEqual(lesson.focusKeys, before.newKeys);
@@ -1095,7 +1095,7 @@ test('lekce s novým písmenem má za sebou lekci se vzory', () => {
 
 test('slova a procvičení nejsou v jedné lekci zároveň', () => {
   for (const lesson of LESSONS) {
-    if (!lesson.newKeys.length && !lesson.focusKeys) continue;
+    if (!lesson.newKeys.length && !lesson.id.endsWith('P')) continue;
     if (!['Základní řada', 'Horní řada', 'Dolní řada', 'Háčky a čárky'].includes(lesson.block)) continue;
     const kinds = lesson.steps.map((s) => s.kind);
     assert.ok(!(kinds.includes('words') && kinds.includes('mixed')),
@@ -1153,6 +1153,27 @@ test('lekce se vzory píše hlavně slova s písmenem, které procvičuje', () =
       const mixed = buildStep(lesson, lesson.steps.find((s) => s.kind === 'mixed'), ctx, 3).lines.slice(0, -1);
       assert.ok(shareOf(mixed) >= 0.4, `${id} procvičení: ${mixed.join(' | ')}`);
     }
+  }
+});
+
+test('opakovací lekce cvičí svá písmena v každém kroku', () => {
+  for (const id of ['L09R', 'L16R', 'L18R', 'L22R', 'L25R']) {
+    const lesson = lessonById(id);
+    assert.ok(lesson.focusKeys, id + ': chybí písmena, která lekce opakuje');
+    const i = LESSONS.indexOf(lesson);
+    const ctx = { allowed: allowedCharsUpTo(i), keyStats: {}, uppercase: knowsUppercase(i) };
+    const letters = lesson.focusKeys.filter((k) => /\p{L}/u.test(k));
+    const has = (w) => [...w].some((ch) => letters.includes(ch));
+    const run = (kind) => buildStep(lesson, lesson.steps.find((s) => s.kind === kind), ctx, 1).lines;
+
+    // dřív v opakování E, I, R a U rozcvička E vynechala
+    const warm = run('warmup').join(' ');
+    for (const k of letters) assert.ok(warm.includes(k.repeat(3)), `${id} rozcvička bez ${k}: ${warm}`);
+    for (const group of run('mixedkeys').join(' ').split(' ')) {
+      assert.ok(has(group), `${id}: skupinka ${group} nemá ani jedno opakované písmeno`);
+    }
+    const words = run('words').join(' ').split(' ');
+    assert.ok(words.filter(has).length / words.length >= 0.6, `${id} slova: ${words.join(' ')}`);
   }
 });
 

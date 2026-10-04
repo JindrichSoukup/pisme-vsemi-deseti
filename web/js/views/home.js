@@ -217,7 +217,7 @@ function lessonCard(lesson, profile) {
   const keys = lesson.newKeys.filter((k) => k.length === 1 && k === k.toLowerCase());
   const focus = (lesson.focusKeys || []).filter((k) => k.length === 1);
   const keysLabel = keys.length ? keys.join(' ')
-    : focus.length ? `${focus.join(' ')} · vzory`
+    : focus.length ? `${focus.join(' ')} · ${lesson.steps.some((s) => s.kind === 'scales') ? 'vzory' : 'opakování'}`
       : (lesson.newKeys.length ? 'velká písmena' : 'opakování');
 
   // blok se píše na kartu, protože pořadí už neodpovídá osnově

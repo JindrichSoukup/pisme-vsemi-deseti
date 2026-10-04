@@ -413,10 +413,13 @@ const HOME_ORDER = ['f', 'j', 'd', 'k', 's', 'l', 'a', 'ů', 'g', 'h'];
  * nejhůř. Zbytek řádku se losuje ze všech dřív probraných, se sklonem
  * k těm, které dítěti dělají potíže. Jinak by rozcvička po pár lekcích
  * připomínala pořád jen tu poslední látku a starší klávesy by z ní vypadly.
+ * Lekce, která procvičuje určitá písmena, dá místo dvou posledních do řádku
+ * sevření všech svých písmen.
  */
-function pickReaches(reaches, keyStats, allowed, want = 4) {
-  const fresh = reaches.slice(-2);
-  const older = reaches.slice(0, -2);
+function pickReaches(reaches, keyStats, allowed, want = 4, focus = []) {
+  const own = reaches.filter((grip) => focus.includes(grip[1]));
+  const fresh = own.length ? own : reaches.slice(-2);
+  const older = reaches.filter((grip) => !fresh.includes(grip));
   if (!older.length) return fresh;
 
   const weights = keyWeights(keyStats, [...allowed]);
@@ -438,7 +441,7 @@ function pickReaches(reaches, keyStats, allowed, want = 4) {
  * ještě než přijde nová klávesa. Přesně takhle začíná lekce v klasické
  * učebnici: nejdřív celá základní řada, pak sevření dřív naučených kláves.
  */
-function buildWarmup(newKeys, allowed, lines, layout = 'cs-qwertz', keyStats = null) {
+function buildWarmup(newKeys, allowed, lines, layout = 'cs-qwertz', keyStats = null, focus = []) {
   const known = [...allowed].filter((c) => !newKeys.includes(c));
   const rows = [];
 
@@ -468,16 +471,21 @@ function buildWarmup(newKeys, allowed, lines, layout = 'cs-qwertz', keyStats = n
   }
   // Základní řada a za ní pár posledních naučených písmen. Ruce se usadí
   // domů a hned se připomene i to nejčerstvější, aby rozcvička nebyla
-  // pokaždé jeden a tentýž řádek.
-  const latest = outside
+  // pokaždé jeden a tentýž řádek. Procvičovaná písmena jsou tam všechna,
+  // jinak by v opakování E, I, R a U vypadlo E jako nejstarší.
+  const recent = outside
     // g a h se píší nataženým ukazováčkem, ale v prvním řádku už jsou
     // jako součást základní řady, takže by se zdvojily
-    .filter((c) => !HOME_ORDER.includes(c) && /\p{L}/u.test(c))
-    .slice(-3)
+    .filter((c) => !HOME_ORDER.includes(c) && /\p{L}/u.test(c));
+  const own = recent.filter((c) => focus.includes(c));
+  const spare = Math.max(0, 3 - own.length);
+  const others = spare ? recent.filter((c) => !own.includes(c)).slice(-spare) : [];
+  const latest = recent
+    .filter((c) => own.includes(c) || others.includes(c))
     .map((c) => c.repeat(3));
   if (homeRow.length >= 2) rows.push(fillRow(homeRow.concat(latest).join(' ')));
 
-  if (reaches.length) rows.push(fillRow(pickReaches(reaches, keyStats, allowed).join(' ')));
+  if (reaches.length) rows.push(fillRow(pickReaches(reaches, keyStats, allowed, 4, focus).join(' ')));
 
   // v úplně prvních lekcích se ještě není co ptát na natažené klávesy,
   // druhý řádek proto udělají slábnoucí skupinky ze dvou známých kláves
@@ -1005,7 +1013,7 @@ export function buildStep(lesson, step, ctx, stepIndex = 0) {
     }
 
     case 'warmup': {
-      const warm = buildWarmup(newKeys, allowed, lines, layout, keyStats);
+      const warm = buildWarmup(newKeys, allowed, lines, layout, keyStats, lesson.focusKeys || []);
       return { label: step.label, lines: warm || buildLetters(newKeys, lines, allowed, 0) };
     }
 
@@ -1023,7 +1031,7 @@ export function buildStep(lesson, step, ctx, stepIndex = 0) {
     }
 
     case 'mixedkeys':
-      return { label: step.label, lines: buildMixedKeys(newKeys, allowed, lines) };
+      return { label: step.label, lines: buildMixedKeys(lesson.focusKeys || newKeys, allowed, lines) };
 
     case 'shiftpairs':
       return { label: step.label, lines: buildShiftPairs(newKeys, lines, layout) };
@@ -1037,14 +1045,16 @@ export function buildStep(lesson, step, ctx, stepIndex = 0) {
       return { label: step.label, lines: buildSyllables(newKeys, allowed, lines, stepIndex) };
 
     case 'words': {
-      const closing = step.closing ? buildClosing(lesson.focusKeys || newKeys, allowed, uppercase) : null;
-      const wordLines = buildWords(newKeys, allowed, lines, {
+      const focus = lesson.focusKeys || newKeys;
+      const closing = step.closing ? buildClosing(focus, allowed, uppercase) : null;
+      const wordLines = buildWords(focus, allowed, lines, {
         keyStats,
         capitalize: step.capitalize,
         punct: step.punct,
         focusOnly: step.focusOnly,
-        // polovina slov s novým písmenem, jinak se mezi ostatními ztratí
-        focusShare: 0.5,
+        // polovina slov s novým písmenem, jinak se mezi ostatními ztratí;
+        // opakovací lekce je na procvičovaná písmena celá, tak dvě třetiny
+        focusShare: lesson.focusKeys ? 2 / 3 : 0.5,
         offset: stepIndex,
       });
       return { label: step.label, lines: closing ? wordLines.concat(closing) : wordLines };
